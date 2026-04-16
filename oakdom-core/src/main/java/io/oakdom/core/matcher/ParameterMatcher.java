@@ -11,6 +11,14 @@ public class ParameterMatcher {
     }
 
     public boolean isExcluded(String parameterName) {
+        if (parameterName == null) {
+            return false;
+        }
+        for (String excluded : excludedParameters) {
+            if (excluded.equals(parameterName)) {
+                return true;
+            }
+        }
         return false;
     }
 }
