@@ -2,14 +2,37 @@ package io.oakdom.core.matcher;
 
 import java.util.List;
 
+/**
+ * Matches request URIs against a list of Ant-style URL patterns.
+ *
+ * <p>Supported pattern syntax:
+ * <ul>
+ *   <li>{@code ?} - matches exactly one character</li>
+ *   <li>{@code *} - matches zero or more characters within a single path segment</li>
+ *   <li>{@code **} - matches zero or more path segments</li>
+ * </ul>
+ *
+ * <p>Example patterns: {@code /api/editor/**}, {@code /admin/*}, {@code /user/?/profile}
+ */
 public class UrlPatternMatcher {
 
     private final List<String> patterns;
 
+    /**
+     * Creates a new matcher with the given list of URL patterns.
+     *
+     * @param patterns the list of Ant-style URL patterns to match against
+     */
     public UrlPatternMatcher(List<String> patterns) {
         this.patterns = patterns;
     }
 
+    /**
+     * Returns {@code true} if the given request URI matches any of the configured patterns.
+     *
+     * @param requestUri the request URI to test (without query string)
+     * @return {@code true} if a matching pattern is found, {@code false} otherwise
+     */
     public boolean matches(String requestUri) {
         for (String pattern : patterns) {
             if (matchPattern(pattern, requestUri)) {
