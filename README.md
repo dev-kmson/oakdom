@@ -1,5 +1,7 @@
 # oakdom
 
+> **⚠️ This project is currently under active development and is not yet available for production use.**
+
 A lightweight open-source library for defending against input-based web security vulnerabilities in Java/Spring environments.
 
 oakdom covers what Spring Security does not: input sanitization for XSS, SQL injection, CRLF, and similar threats. Add one dependency and it works.
@@ -10,51 +12,6 @@ oakdom covers what Spring Security does not: input sanitization for XSS, SQL inj
 - Plain Servlet
 - Spring Boot 2.x
 - Spring Boot 3.x
-
-## Quick Start
-
-**Spring Boot 2.x**
-```xml
-<dependency>
-    <groupId>io.oakdom</groupId>
-    <artifactId>oakdom-xss-spring-boot-starter</artifactId>
-    <version>1.0.0</version>
-</dependency>
-```
-
-**Spring Boot 3.x**
-```xml
-<dependency>
-    <groupId>io.oakdom</groupId>
-    <artifactId>oakdom-xss-spring-boot3-starter</artifactId>
-    <version>1.0.0</version>
-</dependency>
-```
-
-**Plain Servlet**
-```xml
-<dependency>
-    <groupId>io.oakdom</groupId>
-    <artifactId>oakdom-xss</artifactId>
-    <version>1.0.0</version>
-</dependency>
-```
-
-## Configuration
-
-```properties
-# Enable/disable XSS filter (default: true)
-oakdom.xss.enabled=true
-
-# Filter mode: blacklist or whitelist
-oakdom.xss.filter-mode=blacklist
-
-# URLs to exclude from filtering
-oakdom.xss.exclude-urls=/api/editor/**, /admin/**
-
-# Parameters to exclude from filtering
-oakdom.xss.exclude-parameters=htmlContent, rawData
-```
 
 ## Modules
 
