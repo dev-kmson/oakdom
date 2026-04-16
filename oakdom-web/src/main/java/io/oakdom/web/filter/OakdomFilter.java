@@ -1,6 +1,6 @@
 package io.oakdom.web.filter;
 
-public interface VulnerabilityFilter {
+public interface OakdomFilter {
 
     boolean shouldSkip(String requestUri, String contentType);
 }

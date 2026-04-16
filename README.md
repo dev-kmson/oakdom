@@ -9,7 +9,7 @@ oakdom covers what Spring Security does not: input sanitization for XSS, SQL inj
 ## Supported Environments
 
 - JDK 1.8+
-- Plain Servlet
+- Legacy Spring MVC
 - Spring Boot 2.x
 - Spring Boot 3.x
 
@@ -18,8 +18,8 @@ oakdom covers what Spring Security does not: input sanitization for XSS, SQL inj
 | Module | Description |
 |--------|-------------|
 | `oakdom-core` | Pure Java common interfaces |
-| `oakdom-web` | Servlet-based common interfaces |
-| `oakdom-xss` | XSS sanitization and servlet filter |
+| `oakdom-web` | Spring MVC common interfaces |
+| `oakdom-xss` | XSS sanitization for legacy Spring MVC |
 | `oakdom-xss-spring-boot-starter` | Auto-configuration for Spring Boot 2.x |
 | `oakdom-xss-spring-boot3-starter` | Auto-configuration for Spring Boot 3.x |
 | `oakdom-all-spring-boot-starter` | All-in-one starter for Spring Boot 2.x |

@@ -1,9 +1,10 @@
-description = 'oakdom-xss: XSS sanitization and servlet filter'
+description = 'oakdom-xss: XSS sanitization for legacy Spring MVC'
 
 dependencies {
     api project(':oakdom-web')
 
     compileOnly "javax.servlet:javax.servlet-api:${rootProject.ext.servletApiVersion}"
     compileOnly "jakarta.servlet:jakarta.servlet-api:${rootProject.ext.jakartaServletVersion}"
+    compileOnly "org.springframework:spring-webmvc:${rootProject.ext.springVersion}"
     compileOnly "com.fasterxml.jackson.core:jackson-databind:${rootProject.ext.jacksonVersion}"
 }

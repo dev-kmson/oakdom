@@ -1,6 +1,6 @@
 package io.oakdom.web.wrapper;
 
-public abstract class VulnerabilityRequestWrapper {
+public abstract class OakdomRequestWrapper {
 
     public abstract String sanitizeValue(String value);
 }

@@ -1,8 +1,8 @@
 package io.oakdom.xss.filter;
 
-import io.oakdom.web.filter.VulnerabilityFilter;
+import io.oakdom.web.filter.OakdomFilter;
 
-public class XssFilter implements VulnerabilityFilter {
+public class OakdomXssFilter implements OakdomFilter {
 
     @Override
     public boolean shouldSkip(String requestUri, String contentType) {

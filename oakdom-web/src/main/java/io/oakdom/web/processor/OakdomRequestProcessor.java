@@ -1,6 +1,6 @@
 package io.oakdom.web.processor;
 
-public interface RequestProcessor {
+public interface OakdomRequestProcessor {
 
     boolean supports(String contentType);
 }
