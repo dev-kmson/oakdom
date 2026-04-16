@@ -1,0 +1,9 @@
+description = 'oakdom-xss: XSS sanitization and servlet filter'
+
+dependencies {
+    api project(':oakdom-web')
+
+    compileOnly "javax.servlet:javax.servlet-api:${rootProject.ext.servletApiVersion}"
+    compileOnly "jakarta.servlet:jakarta.servlet-api:${rootProject.ext.jakartaServletVersion}"
+    compileOnly "com.fasterxml.jackson.core:jackson-databind:${rootProject.ext.jacksonVersion}"
+}

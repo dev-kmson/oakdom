@@ -1,0 +1,17 @@
+description = 'oakdom-xss-spring-boot3-starter: XSS auto-configuration for Spring Boot 3.x'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+dependencies {
+    api project(':oakdom-xss')
+
+    compileOnly "jakarta.servlet:jakarta.servlet-api:${rootProject.ext.jakartaServletVersion}"
+    compileOnly "com.fasterxml.jackson.core:jackson-databind:${rootProject.ext.jacksonVersion}"
+
+    implementation "org.springframework.boot:spring-boot-autoconfigure:${rootProject.ext.springBoot3Version}"
+    compileOnly "org.springframework:spring-webmvc:${rootProject.ext.spring6Version}"
+}

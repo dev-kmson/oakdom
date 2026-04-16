@@ -1,0 +1,11 @@
+description = 'oakdom-xss-spring-boot-starter: XSS auto-configuration for Spring Boot 2.x'
+
+dependencies {
+    api project(':oakdom-xss')
+
+    compileOnly "javax.servlet:javax.servlet-api:${rootProject.ext.servletApiVersion}"
+    compileOnly "com.fasterxml.jackson.core:jackson-databind:${rootProject.ext.jacksonVersion}"
+
+    implementation "org.springframework.boot:spring-boot-autoconfigure:${rootProject.ext.springBootVersion}"
+    compileOnly "org.springframework:spring-webmvc:${rootProject.ext.springVersion}"
+}

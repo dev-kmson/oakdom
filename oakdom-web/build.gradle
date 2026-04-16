@@ -1,0 +1,8 @@
+description = 'oakdom-web: servlet-based common interfaces and utilities'
+
+dependencies {
+    api project(':oakdom-core')
+
+    compileOnly "javax.servlet:javax.servlet-api:${rootProject.ext.servletApiVersion}"
+    compileOnly "jakarta.servlet:jakarta.servlet-api:${rootProject.ext.jakartaServletVersion}"
+}

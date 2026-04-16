@@ -1,0 +1,9 @@
+rootProject.name = 'oakdom'
+
+include 'oakdom-core'
+include 'oakdom-web'
+include 'oakdom-xss'
+include 'oakdom-xss-spring-boot-starter'
+include 'oakdom-xss-spring-boot3-starter'
+include 'oakdom-all-spring-boot-starter'
+include 'oakdom-all-spring-boot3-starter'

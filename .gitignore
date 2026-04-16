@@ -1,0 +1,29 @@
+# Gradle
+.gradle/
+**/build/
+.gradletasknamecache
+gradle-app.setting
+
+# Gradle wrapper jar (committed intentionally)
+!gradle/wrapper/gradle-wrapper.jar
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# macOS
+.DS_Store
+.DS_Store?
+._*
+
+# Logs
+*.log
+
+# JVM crash logs
+hs_err_pid*
+
+# Local environment
+local.properties

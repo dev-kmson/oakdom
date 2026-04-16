@@ -1,0 +1,61 @@
+ext {
+    groupId               = 'io.oakdom'
+    projectVersion        = '1.0.0-SNAPSHOT'
+
+    springBootVersion     = '2.0.0.RELEASE'
+    springBoot3Version    = '3.0.0'
+    springVersion         = '5.0.0.RELEASE'
+    spring6Version        = '6.0.0'
+    servletApiVersion     = '4.0.1'
+    jakartaServletVersion = '6.0.0'
+    jacksonVersion        = '2.9.0'
+    junitVersion          = '5.10.2'
+    assertjVersion        = '3.25.3'
+}
+
+subprojects {
+    apply plugin: 'java-library'
+    apply plugin: 'maven-publish'
+
+    group   = rootProject.ext.groupId
+    version = rootProject.ext.projectVersion
+
+    repositories {
+        mavenCentral()
+    }
+
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(8)
+        }
+        withSourcesJar()
+        withJavadocJar()
+    }
+
+    dependencies {
+        testImplementation "org.junit.jupiter:junit-jupiter-api:${rootProject.ext.junitVersion}"
+        testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${rootProject.ext.junitVersion}"
+        testImplementation "org.assertj:assertj-core:${rootProject.ext.assertjVersion}"
+    }
+
+    test {
+        useJUnitPlatform()
+    }
+
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                from components.java
+                pom {
+                    url = 'https://github.com/minihandz/oakdom'
+                    licenses {
+                        license {
+                            name = 'Apache License, Version 2.0'
+                            url  = 'https://www.apache.org/licenses/LICENSE-2.0'
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

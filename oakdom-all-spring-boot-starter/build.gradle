@@ -1,0 +1,5 @@
+description = 'oakdom-all-spring-boot-starter: all-in-one security starter for Spring Boot 2.x'
+
+dependencies {
+    api project(':oakdom-xss-spring-boot-starter')
+}
