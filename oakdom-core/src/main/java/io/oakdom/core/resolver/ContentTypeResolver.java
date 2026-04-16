@@ -1,16 +1,18 @@
 package io.oakdom.core.resolver;
 
-public class ContentTypeResolver {
+public final class ContentTypeResolver {
 
-    public boolean isJson(String contentType) {
+    private ContentTypeResolver() {}
+
+    public static boolean isJson(String contentType) {
         return false;
     }
 
-    public boolean isFormUrlEncoded(String contentType) {
+    public static boolean isFormUrlEncoded(String contentType) {
         return false;
     }
 
-    public boolean isMultipart(String contentType) {
+    public static boolean isMultipart(String contentType) {
         return false;
     }
 }
