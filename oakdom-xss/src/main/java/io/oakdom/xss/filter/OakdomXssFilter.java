@@ -14,7 +14,7 @@ import java.util.Collections;
  * and resolves the {@link FilterMode} to apply, based on the rules defined in
  * {@link XssConfig}.
  *
- * <h3>Usage — legacy Spring MVC (subclass)</h3>
+ * <h3>Usage — legacy Spring MVC</h3>
  * <p>Extend this class and override {@link #configure()} to provide a custom
  * {@link XssConfig}. Register the subclass as a servlet filter in {@code web.xml}:
  * <pre>{@code
@@ -27,13 +27,6 @@ import java.util.Collections;
  *             .build();
  *     }
  * }
- * }</pre>
- *
- * <h3>Usage — programmatic</h3>
- * <pre>{@code
- * OakdomXssFilter filter = new OakdomXssFilter(
- *     XssConfig.builder().globalFilterMode(FilterMode.BLACKLIST).build()
- * );
  * }</pre>
  *
  * <h3>Filter mode priority</h3>
