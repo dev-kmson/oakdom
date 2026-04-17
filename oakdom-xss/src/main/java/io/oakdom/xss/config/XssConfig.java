@@ -290,10 +290,36 @@ public class XssConfig {
         }
 
         /**
-         * Adds a filter-mode override rule for the given URL pattern and/or parameter name.
+         * Adds a filter-mode override rule that applies to all parameters under the
+         * given URL pattern.
          *
-         * @param urlPattern    Ant-style URL pattern, or {@code null} to match any URL
-         * @param parameterName exact parameter name, or {@code null} to match any parameter
+         * @param urlPattern Ant-style URL pattern; must not be {@code null}
+         * @param filterMode the filter mode to apply; must not be {@code null}
+         * @return this builder
+         */
+        public Builder filterRuleForUrl(String urlPattern, FilterMode filterMode) {
+            filterRules.add(new FilterRule(urlPattern, null, filterMode));
+            return this;
+        }
+
+        /**
+         * Adds a filter-mode override rule that applies to the given parameter name
+         * across all URLs.
+         *
+         * @param parameterName exact parameter name; must not be {@code null}
+         * @param filterMode    the filter mode to apply; must not be {@code null}
+         * @return this builder
+         */
+        public Builder filterRuleForParam(String parameterName, FilterMode filterMode) {
+            filterRules.add(new FilterRule(null, parameterName, filterMode));
+            return this;
+        }
+
+        /**
+         * Adds a filter-mode override rule for the given URL pattern and parameter name.
+         *
+         * @param urlPattern    Ant-style URL pattern; must not be {@code null}
+         * @param parameterName exact parameter name; must not be {@code null}
          * @param filterMode    the filter mode to apply; must not be {@code null}
          * @return this builder
          */
@@ -303,11 +329,35 @@ public class XssConfig {
         }
 
         /**
-         * Adds an exclusion rule for the given URL pattern and/or parameter name.
-         * Requests matching this rule will skip XSS filtering entirely.
+         * Adds an exclusion rule that skips XSS filtering for all parameters under
+         * the given URL pattern.
          *
-         * @param urlPattern    Ant-style URL pattern, or {@code null} to match any URL
-         * @param parameterName exact parameter name, or {@code null} to match any parameter
+         * @param urlPattern Ant-style URL pattern; must not be {@code null}
+         * @return this builder
+         */
+        public Builder excludeUrl(String urlPattern) {
+            excludeRules.add(new ExcludeRule(urlPattern, null));
+            return this;
+        }
+
+        /**
+         * Adds an exclusion rule that skips XSS filtering for the given parameter name
+         * across all URLs.
+         *
+         * @param parameterName exact parameter name; must not be {@code null}
+         * @return this builder
+         */
+        public Builder excludeParam(String parameterName) {
+            excludeRules.add(new ExcludeRule(null, parameterName));
+            return this;
+        }
+
+        /**
+         * Adds an exclusion rule that skips XSS filtering for the given URL pattern
+         * and parameter name combination.
+         *
+         * @param urlPattern    Ant-style URL pattern; must not be {@code null}
+         * @param parameterName exact parameter name; must not be {@code null}
          * @return this builder
          */
         public Builder excludeRule(String urlPattern, String parameterName) {
