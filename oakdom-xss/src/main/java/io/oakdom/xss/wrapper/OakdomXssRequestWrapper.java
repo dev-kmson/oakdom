@@ -1,15 +1,16 @@
 package io.oakdom.xss.wrapper;
 
 import io.oakdom.core.filter.FilterMode;
-import io.oakdom.web.filter.OakdomFilter;
 import io.oakdom.web.wrapper.OakdomRequestWrapper;
-import io.oakdom.xss.sanitizer.DefaultXssSanitizer;
+import io.oakdom.xss.filter.OakdomXssFilter;
 
 /**
  * XSS-specific implementation of {@link OakdomRequestWrapper}.
  *
- * <p>Sanitizes parameter values using {@link DefaultXssSanitizer} and delegates
- * exclusion checks to the configured {@link OakdomFilter}.
+ * <p>Sanitizes parameter values using the {@link OakdomXssFilter} provided at
+ * construction time, and delegates exclusion checks to the same filter.
+ * The sanitizer used reflects any customizations defined in the filter's
+ * {@link io.oakdom.xss.config.XssConfig}.
  *
  * <p>This class acts as a strategy object used by the XSS servlet filter to
  * apply sanitization when parameter values are accessed:
@@ -25,16 +26,16 @@ import io.oakdom.xss.sanitizer.DefaultXssSanitizer;
  */
 public class OakdomXssRequestWrapper extends OakdomRequestWrapper {
 
-    private final OakdomFilter filter;
+    private final OakdomXssFilter filter;
     private final String requestUri;
 
     /**
      * Creates a wrapper for the given filter and request URI.
      *
-     * @param filter     the filter used to determine exclusion; must not be {@code null}
+     * @param filter     the XSS filter used for sanitization and exclusion checks; must not be {@code null}
      * @param requestUri the URI of the current request
      */
-    public OakdomXssRequestWrapper(OakdomFilter filter, String requestUri) {
+    public OakdomXssRequestWrapper(OakdomXssFilter filter, String requestUri) {
         if (filter == null) {
             throw new IllegalArgumentException("filter must not be null");
         }
@@ -43,8 +44,8 @@ public class OakdomXssRequestWrapper extends OakdomRequestWrapper {
     }
 
     /**
-     * Sanitizes the given value using the {@link DefaultXssSanitizer} for the
-     * specified {@link FilterMode}.
+     * Sanitizes the given value using the filter's sanitizer for the specified
+     * {@link FilterMode}.
      *
      * @param value      the raw input value; may be {@code null}
      * @param filterMode the filter mode to apply; must not be {@code null}
@@ -52,13 +53,13 @@ public class OakdomXssRequestWrapper extends OakdomRequestWrapper {
      */
     @Override
     public String sanitizeValue(String value, FilterMode filterMode) {
-        return DefaultXssSanitizer.of(filterMode).sanitize(value);
+        return filter.sanitize(value, filterMode);
     }
 
     /**
      * Returns {@code true} if the given parameter should be excluded from XSS filtering.
      *
-     * <p>Delegates to {@link OakdomFilter#shouldSkip(String, String)} using the
+     * <p>Delegates to {@link OakdomXssFilter#shouldSkip(String, String)} using the
      * request URI provided at construction time.
      *
      * @param parameterName the parameter name to check

@@ -4,25 +4,34 @@ import io.oakdom.core.filter.FilterMode;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Configuration for oakdom XSS filtering.
  *
  * <p>Defines the global filter mode, per-URL/parameter filter-mode overrides,
- * and per-URL/parameter exclusion rules. Priority order (highest to lowest):
+ * per-URL/parameter exclusion rules, and optional customizations to the default
+ * blacklist escape character set and whitelist allowed tags/CSS properties.
+ *
+ * <p>Priority order for filter mode resolution (highest to lowest):
  * <ol>
- *   <li>Parameter-level rule (filter or exclude)</li>
- *   <li>URL-level rule (filter or exclude)</li>
- *   <li>Global filter mode</li>
+ *   <li>Rule matching both URL pattern and parameter name (most specific)</li>
+ *   <li>Rule matching parameter name only</li>
+ *   <li>Rule matching URL pattern only</li>
+ *   <li>Global filter mode (least specific)</li>
  * </ol>
  *
- * <p>Use {@link Builder} to construct an instance programmatically:
+ * <p>Use {@link Builder} to construct an instance:
  * <pre>{@code
  * XssConfig config = XssConfig.builder()
- *     .globalFilterMode(FilterMode.BLACKLIST)
- *     .filterRule("/api/editor", "htmlContent", FilterMode.WHITELIST)
+ *     .globalFilterMode(FilterMode.WHITELIST)
+ *     .filterRule("/api/editor/**", "content", FilterMode.WHITELIST)
  *     .excludeRule("/api/raw", null)
+ *     .addAllowedTag("video", "audio")
+ *     .removeAllowedTag("strike")
+ *     .addAllowedCssProperty("line-height")
  *     .build();
  * }</pre>
  */
@@ -32,10 +41,23 @@ public class XssConfig {
     private final List<FilterRule> filterRules;
     private final List<ExcludeRule> excludeRules;
 
+    private final Set<Character> addEscapeChars;
+    private final Set<Character> removeEscapeChars;
+    private final Set<String> addAllowedTags;
+    private final Set<String> removeAllowedTags;
+    private final Set<String> addAllowedCssProperties;
+    private final Set<String> removeAllowedCssProperties;
+
     private XssConfig(Builder builder) {
         this.globalFilterMode = builder.globalFilterMode;
         this.filterRules = Collections.unmodifiableList(new ArrayList<>(builder.filterRules));
         this.excludeRules = Collections.unmodifiableList(new ArrayList<>(builder.excludeRules));
+        this.addEscapeChars = Collections.unmodifiableSet(new LinkedHashSet<>(builder.addEscapeChars));
+        this.removeEscapeChars = Collections.unmodifiableSet(new LinkedHashSet<>(builder.removeEscapeChars));
+        this.addAllowedTags = Collections.unmodifiableSet(new LinkedHashSet<>(builder.addAllowedTags));
+        this.removeAllowedTags = Collections.unmodifiableSet(new LinkedHashSet<>(builder.removeAllowedTags));
+        this.addAllowedCssProperties = Collections.unmodifiableSet(new LinkedHashSet<>(builder.addAllowedCssProperties));
+        this.removeAllowedCssProperties = Collections.unmodifiableSet(new LinkedHashSet<>(builder.removeAllowedCssProperties));
     }
 
     /**
@@ -63,6 +85,60 @@ public class XssConfig {
      */
     public List<ExcludeRule> getExcludeRules() {
         return excludeRules;
+    }
+
+    /**
+     * Returns the characters to add to the blacklist escape set beyond the five defaults.
+     *
+     * @return unmodifiable set of characters to add; never {@code null}
+     */
+    public Set<Character> getAddEscapeChars() {
+        return addEscapeChars;
+    }
+
+    /**
+     * Returns the characters to remove from the blacklist default escape set.
+     *
+     * @return unmodifiable set of characters to remove; never {@code null}
+     */
+    public Set<Character> getRemoveEscapeChars() {
+        return removeEscapeChars;
+    }
+
+    /**
+     * Returns the HTML tags to add to the whitelist default allowed tag set.
+     *
+     * @return unmodifiable set of tag names to add; never {@code null}
+     */
+    public Set<String> getAddAllowedTags() {
+        return addAllowedTags;
+    }
+
+    /**
+     * Returns the HTML tags to remove from the whitelist default allowed tag set.
+     *
+     * @return unmodifiable set of tag names to remove; never {@code null}
+     */
+    public Set<String> getRemoveAllowedTags() {
+        return removeAllowedTags;
+    }
+
+    /**
+     * Returns the CSS properties to add to the whitelist default allowed CSS property set.
+     *
+     * @return unmodifiable set of CSS property names to add; never {@code null}
+     */
+    public Set<String> getAddAllowedCssProperties() {
+        return addAllowedCssProperties;
+    }
+
+    /**
+     * Returns the CSS properties to remove from the whitelist default allowed CSS property set.
+     *
+     * @return unmodifiable set of CSS property names to remove; never {@code null}
+     */
+    public Set<String> getRemoveAllowedCssProperties() {
+        return removeAllowedCssProperties;
     }
 
     /**
@@ -188,6 +264,13 @@ public class XssConfig {
         private final List<FilterRule> filterRules = new ArrayList<>();
         private final List<ExcludeRule> excludeRules = new ArrayList<>();
 
+        private final Set<Character> addEscapeChars = new LinkedHashSet<>();
+        private final Set<Character> removeEscapeChars = new LinkedHashSet<>();
+        private final Set<String> addAllowedTags = new LinkedHashSet<>();
+        private final Set<String> removeAllowedTags = new LinkedHashSet<>();
+        private final Set<String> addAllowedCssProperties = new LinkedHashSet<>();
+        private final Set<String> removeAllowedCssProperties = new LinkedHashSet<>();
+
         private Builder() {
         }
 
@@ -229,6 +312,103 @@ public class XssConfig {
          */
         public Builder excludeRule(String urlPattern, String parameterName) {
             excludeRules.add(new ExcludeRule(urlPattern, parameterName));
+            return this;
+        }
+
+        /**
+         * Adds characters to the blacklist escape set beyond the five defaults
+         * ({@code &}, {@code <}, {@code >}, {@code "}, {@code '}).
+         *
+         * <p>Pre-defined entities are used for {@code /} and {@code `};
+         * all other characters use numeric entities ({@code &#xHH;}).
+         *
+         * @param chars one or more characters to add
+         * @return this builder
+         */
+        public Builder addEscapeChar(char... chars) {
+            for (char c : chars) {
+                addEscapeChars.add(c);
+            }
+            return this;
+        }
+
+        /**
+         * Removes characters from the blacklist default escape set.
+         *
+         * <p>Removing core security characters ({@code &}, {@code <}, {@code >},
+         * {@code "}, {@code '}) is permitted but strongly discouraged.
+         *
+         * @param chars one or more characters to remove
+         * @return this builder
+         */
+        public Builder removeEscapeChar(char... chars) {
+            for (char c : chars) {
+                removeEscapeChars.add(c);
+            }
+            return this;
+        }
+
+        /**
+         * Adds HTML tags to the whitelist default allowed tag set.
+         * Tag names are normalized to lowercase.
+         *
+         * @param tags one or more tag names to add (e.g. {@code "video"}, {@code "audio"})
+         * @return this builder
+         */
+        public Builder addAllowedTag(String... tags) {
+            for (String tag : tags) {
+                if (tag != null) {
+                    addAllowedTags.add(tag.toLowerCase());
+                }
+            }
+            return this;
+        }
+
+        /**
+         * Removes HTML tags from the whitelist default allowed tag set.
+         * Tag names are normalized to lowercase.
+         *
+         * @param tags one or more tag names to remove (e.g. {@code "strike"})
+         * @return this builder
+         */
+        public Builder removeAllowedTag(String... tags) {
+            for (String tag : tags) {
+                if (tag != null) {
+                    removeAllowedTags.add(tag.toLowerCase());
+                }
+            }
+            return this;
+        }
+
+        /**
+         * Adds CSS properties to the whitelist default allowed CSS property set.
+         * Property names are normalized to lowercase.
+         *
+         * @param properties one or more CSS property names to add (e.g. {@code "line-height"})
+         * @return this builder
+         */
+        public Builder addAllowedCssProperty(String... properties) {
+            for (String property : properties) {
+                if (property != null) {
+                    addAllowedCssProperties.add(property.toLowerCase());
+                }
+            }
+            return this;
+        }
+
+        /**
+         * Removes CSS properties from the whitelist default allowed CSS property set.
+         * Property names are normalized to lowercase.
+         *
+         * @param properties one or more CSS property names to remove (e.g. {@code "float"})
+         * @return this builder
+         */
+        public Builder removeAllowedCssProperty(String... properties) {
+            for (String property : properties) {
+                if (property != null) {
+                    removeAllowedCssProperties.add(property.toLowerCase());
+                }
+            }
             return this;
         }
 

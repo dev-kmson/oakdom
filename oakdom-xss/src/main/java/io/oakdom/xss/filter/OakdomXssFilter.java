@@ -4,6 +4,7 @@ import io.oakdom.core.filter.FilterMode;
 import io.oakdom.core.matcher.UrlPatternMatcher;
 import io.oakdom.web.filter.OakdomFilter;
 import io.oakdom.xss.config.XssConfig;
+import io.oakdom.xss.sanitizer.DefaultXssSanitizer;
 
 import java.util.Collections;
 
@@ -40,6 +41,8 @@ import java.util.Collections;
 public class OakdomXssFilter implements OakdomFilter {
 
     private final XssConfig config;
+    private final DefaultXssSanitizer blacklistSanitizer;
+    private final DefaultXssSanitizer whitelistSanitizer;
 
     /**
      * Creates a filter using the configuration returned by {@link #configure()}.
@@ -47,6 +50,8 @@ public class OakdomXssFilter implements OakdomFilter {
      */
     public OakdomXssFilter() {
         this.config = configure();
+        this.blacklistSanitizer = DefaultXssSanitizer.of(FilterMode.BLACKLIST, this.config);
+        this.whitelistSanitizer = DefaultXssSanitizer.of(FilterMode.WHITELIST, this.config);
     }
 
     /**
@@ -59,6 +64,24 @@ public class OakdomXssFilter implements OakdomFilter {
             throw new IllegalArgumentException("config must not be null");
         }
         this.config = config;
+        this.blacklistSanitizer = DefaultXssSanitizer.of(FilterMode.BLACKLIST, config);
+        this.whitelistSanitizer = DefaultXssSanitizer.of(FilterMode.WHITELIST, config);
+    }
+
+    /**
+     * Sanitizes the given value using the sanitizer configured for the specified
+     * {@link FilterMode}.
+     *
+     * <p>The sanitizer reflects any customizations ({@code addEscapeChar},
+     * {@code addAllowedTag}, etc.) defined in the {@link XssConfig} this filter
+     * was constructed with.
+     *
+     * @param value      the raw input value; may be {@code null}
+     * @param filterMode the filter mode to apply; must not be {@code null}
+     * @return the sanitized value, or {@code null} if {@code value} is {@code null}
+     */
+    public String sanitize(String value, FilterMode filterMode) {
+        return (filterMode == FilterMode.WHITELIST ? whitelistSanitizer : blacklistSanitizer).sanitize(value);
     }
 
     /**
@@ -67,6 +90,10 @@ public class OakdomXssFilter implements OakdomFilter {
      * <p>Subclasses can override this method to provide custom configuration
      * instead of passing a config to the constructor. The default implementation
      * returns a config with {@link FilterMode#BLACKLIST} as the global mode.
+     *
+     * <p><strong>Note:</strong> This method is called from the constructor.
+     * Implementations must not reference subclass instance fields, as they will
+     * not yet be initialized at the time this method is invoked.
      *
      * @return the XSS configuration; never {@code null}
      */

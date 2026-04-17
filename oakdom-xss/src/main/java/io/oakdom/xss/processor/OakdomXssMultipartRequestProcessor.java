@@ -4,6 +4,7 @@ import io.oakdom.core.filter.FilterMode;
 import io.oakdom.core.resolver.ContentTypeResolver;
 import io.oakdom.web.processor.OakdomRequestProcessor;
 import io.oakdom.xss.sanitizer.DefaultXssSanitizer;
+import io.oakdom.xss.sanitizer.XssSanitizer;
 
 /**
  * {@link OakdomRequestProcessor} for {@code multipart/form-data} requests.
@@ -12,9 +13,39 @@ import io.oakdom.xss.sanitizer.DefaultXssSanitizer;
  * Only text-type parts are sanitized; binary parts (file data) are not processed
  * by this class and must be excluded from sanitization at the filter level.
  *
- * <p>Each text part value is sanitized individually using {@link DefaultXssSanitizer}.
+ * <p>The no-arg constructor uses the default (uncustomized) sanitizers. When XSS
+ * configuration customizations are needed, use
+ * {@link #OakdomXssMultipartRequestProcessor(XssSanitizer, XssSanitizer)} and pass
+ * sanitizers obtained from {@link DefaultXssSanitizer#of(FilterMode, io.oakdom.xss.config.XssConfig)}.
  */
 public class OakdomXssMultipartRequestProcessor implements OakdomRequestProcessor {
+
+    private final XssSanitizer blacklistSanitizer;
+    private final XssSanitizer whitelistSanitizer;
+
+    /**
+     * Creates a processor using the default (uncustomized) sanitizers.
+     */
+    public OakdomXssMultipartRequestProcessor() {
+        this(DefaultXssSanitizer.of(FilterMode.BLACKLIST), DefaultXssSanitizer.of(FilterMode.WHITELIST));
+    }
+
+    /**
+     * Creates a processor using the given sanitizers.
+     *
+     * @param blacklistSanitizer sanitizer applied when the filter mode is {@link FilterMode#BLACKLIST}; must not be {@code null}
+     * @param whitelistSanitizer sanitizer applied when the filter mode is {@link FilterMode#WHITELIST}; must not be {@code null}
+     */
+    public OakdomXssMultipartRequestProcessor(XssSanitizer blacklistSanitizer, XssSanitizer whitelistSanitizer) {
+        if (blacklistSanitizer == null) {
+            throw new IllegalArgumentException("blacklistSanitizer must not be null");
+        }
+        if (whitelistSanitizer == null) {
+            throw new IllegalArgumentException("whitelistSanitizer must not be null");
+        }
+        this.blacklistSanitizer = blacklistSanitizer;
+        this.whitelistSanitizer = whitelistSanitizer;
+    }
 
     /**
      * Returns {@code true} if the given content type represents multipart form data.
@@ -28,7 +59,8 @@ public class OakdomXssMultipartRequestProcessor implements OakdomRequestProcesso
     }
 
     /**
-     * Sanitizes the given multipart text field value using the specified {@link FilterMode}.
+     * Sanitizes the given multipart text field value using the sanitizer for the specified
+     * {@link FilterMode}.
      *
      * <p>This method is intended to be called only for text-type parts. Binary parts
      * (e.g., uploaded file contents) must be excluded from processing at the filter level.
@@ -39,6 +71,6 @@ public class OakdomXssMultipartRequestProcessor implements OakdomRequestProcesso
      */
     @Override
     public String process(String value, FilterMode filterMode) {
-        return DefaultXssSanitizer.of(filterMode).sanitize(value);
+        return (filterMode == FilterMode.WHITELIST ? whitelistSanitizer : blacklistSanitizer).sanitize(value);
     }
 }

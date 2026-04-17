@@ -13,7 +13,7 @@ import java.util.regex.Pattern;
  * XSS filter rule that permits a predefined set of safe HTML tags and per-tag safe
  * attributes, while escaping everything else.
  *
- * <h3>Allowed tags</h3>
+ * <h3>Default allowed tags</h3>
  * <p>Inline: {@code b}, {@code i}, {@code em}, {@code strong}, {@code u}, {@code s},
  * {@code strike}, {@code small}, {@code sub}, {@code sup}, {@code cite}, {@code q},
  * {@code code}, {@code span}.
@@ -49,9 +49,11 @@ import java.util.regex.Pattern;
  *   <li>{@code <col>}, {@code <colgroup>} — {@code span}.</li>
  * </ul>
  *
- * <p>Any tag not in the allowed list, along with all non-tag content, is escaped using
- * the same rules as {@link BlacklistXssFilterRule}: {@code &}, {@code <}, {@code >},
- * {@code "}, {@code '}, {@code /}, and {@code `}.
+ * <h3>Customization</h3>
+ * <p>Use {@link #WhitelistXssFilterRule(Set, Set, Set, Set)} to add or remove allowed
+ * tags and CSS properties from the defaults. Disallowed tags and non-tag content are
+ * always escaped using the full 7-character set
+ * ({@code &}, {@code <}, {@code >}, {@code "}, {@code '}, {@code /}, {@code `}).
  *
  * <p>This rule is applied when the active {@link io.oakdom.core.filter.FilterMode} is
  * {@code WHITELIST}.
@@ -59,11 +61,9 @@ import java.util.regex.Pattern;
 public class WhitelistXssFilterRule implements XssFilterRule {
 
     /**
-     * HTML tags that are permitted to pass through.
-     * Tags absent from {@link #ALLOWED_ATTRIBUTES} may still carry
-     * {@link #GLOBAL_ALLOWED_ATTRIBUTES}.
+     * Default set of HTML tags permitted to pass through.
      */
-    static final Set<String> ALLOWED_TAGS = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+    static final Set<String> DEFAULT_ALLOWED_TAGS = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
             // inline
             "b", "i", "em", "strong", "u", "s", "strike", "small", "sub", "sup",
             "cite", "q", "code", "span",
@@ -105,19 +105,13 @@ public class WhitelistXssFilterRule implements XssFilterRule {
     }
 
     /**
-     * Attribute names whose values must pass URL safety validation before being allowed.
-     */
-    private static final Set<String> URL_ATTRIBUTES = Collections.unmodifiableSet(
-            new HashSet<>(Arrays.asList("href", "src")));
-
-    /**
-     * CSS properties that are safe to allow in {@code style} attributes.
+     * Default set of CSS properties safe to allow in {@code style} attributes.
      *
      * <p>{@code background} and {@code background-image} are included because they may
      * reference image URLs in editor-generated content. Their {@code url()} values are
      * individually validated by {@link #isSafeUrl(String)} before being accepted.
      */
-    private static final Set<String> ALLOWED_CSS_PROPERTIES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+    static final Set<String> DEFAULT_ALLOWED_CSS_PROPERTIES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
             "color", "background-color", "background", "background-image",
             "font", "font-size", "font-weight", "font-style", "font-family", "font-variant",
             "text-align", "text-decoration", "text-transform", "text-indent",
@@ -129,6 +123,12 @@ public class WhitelistXssFilterRule implements XssFilterRule {
             "width", "height", "max-width", "max-height", "min-width", "min-height",
             "display", "visibility", "opacity", "float", "clear", "vertical-align"
     )));
+
+    /**
+     * Attribute names whose values must pass URL safety validation before being allowed.
+     */
+    private static final Set<String> URL_ATTRIBUTES = Collections.unmodifiableSet(
+            new HashSet<>(Arrays.asList("href", "src")));
 
     /**
      * Matches an HTML opening or closing tag, capturing the optional closing slash,
@@ -177,6 +177,47 @@ public class WhitelistXssFilterRule implements XssFilterRule {
             Pattern.CASE_INSENSITIVE
     );
 
+    private final Set<String> allowedTags;
+    private final Set<String> allowedCssProperties;
+
+    /**
+     * Creates a rule using the default allowed tags and CSS properties.
+     */
+    public WhitelistXssFilterRule() {
+        this.allowedTags = DEFAULT_ALLOWED_TAGS;
+        this.allowedCssProperties = DEFAULT_ALLOWED_CSS_PROPERTIES;
+    }
+
+    /**
+     * Creates a rule starting from the defaults and applying the given additions and removals.
+     *
+     * <p>Tag and property names are normalized to lowercase before comparison.
+     *
+     * @param addAllowedTags           tags to add to the default allowed set; may be {@code null} or empty
+     * @param removeAllowedTags        tags to remove from the default allowed set; may be {@code null} or empty
+     * @param addAllowedCssProperties  CSS properties to add to the default allowed set; may be {@code null} or empty
+     * @param removeAllowedCssProperties CSS properties to remove from the default allowed set; may be {@code null} or empty
+     */
+    public WhitelistXssFilterRule(Set<String> addAllowedTags, Set<String> removeAllowedTags,
+                                   Set<String> addAllowedCssProperties, Set<String> removeAllowedCssProperties) {
+        this.allowedTags = buildEffectiveSet(DEFAULT_ALLOWED_TAGS, addAllowedTags, removeAllowedTags);
+        this.allowedCssProperties = buildEffectiveSet(DEFAULT_ALLOWED_CSS_PROPERTIES, addAllowedCssProperties, removeAllowedCssProperties);
+    }
+
+    private static Set<String> buildEffectiveSet(Set<String> defaults, Set<String> toAdd, Set<String> toRemove) {
+        if ((toAdd == null || toAdd.isEmpty()) && (toRemove == null || toRemove.isEmpty())) {
+            return defaults;
+        }
+        Set<String> effective = new HashSet<>(defaults);
+        if (toRemove != null) {
+            effective.removeAll(toRemove);
+        }
+        if (toAdd != null) {
+            effective.addAll(toAdd);
+        }
+        return Collections.unmodifiableSet(effective);
+    }
+
     /**
      * Applies the whitelist rule to the given value.
      *
@@ -203,7 +244,7 @@ public class WhitelistXssFilterRule implements XssFilterRule {
             String tagName = matcher.group(2).toLowerCase();
             String attributes = matcher.group(3);
 
-            if (ALLOWED_TAGS.contains(tagName)) {
+            if (allowedTags.contains(tagName)) {
                 if (closing.isEmpty()) {
                     String safeAttrs = buildSafeAttributes(tagName, attributes);
                     result.append('<').append(tagName).append(safeAttrs).append('>');
@@ -273,12 +314,12 @@ public class WhitelistXssFilterRule implements XssFilterRule {
     }
 
     /**
-     * Sanitizes a CSS {@code style} attribute value by allowing only properties in
-     * {@link #ALLOWED_CSS_PROPERTIES} whose values are free of dangerous patterns.
+     * Sanitizes a CSS {@code style} attribute value by allowing only properties in the
+     * configured allowed CSS property set whose values are free of dangerous patterns.
      *
      * <p>Each CSS declaration is parsed individually. A declaration is dropped if:
      * <ul>
-     *   <li>its property name is not in {@link #ALLOWED_CSS_PROPERTIES};</li>
+     *   <li>its property name is not in the allowed CSS property set;</li>
      *   <li>its value matches {@link #DANGEROUS_CSS_VALUE}; or</li>
      *   <li>it contains a {@code url()} whose extracted URL does not pass
      *       {@link #isSafeUrl(String)}.</li>
@@ -299,7 +340,7 @@ public class WhitelistXssFilterRule implements XssFilterRule {
             String property = matcher.group(1).trim().toLowerCase();
             String cssValue = matcher.group(2).trim();
 
-            if (!ALLOWED_CSS_PROPERTIES.contains(property)) {
+            if (!allowedCssProperties.contains(property)) {
                 continue;
             }
             if (DANGEROUS_CSS_VALUE.matcher(cssValue).find()) {
@@ -358,6 +399,7 @@ public class WhitelistXssFilterRule implements XssFilterRule {
 
     /**
      * Escapes all HTML-significant characters in a plain-text segment.
+     * Always uses the full 7-character set regardless of blacklist customization.
      *
      * @param text the text segment to escape
      * @return the escaped text
