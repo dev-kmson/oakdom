@@ -6,14 +6,26 @@ import io.oakdom.web.filter.OakdomFilter;
 import io.oakdom.xss.config.XssConfig;
 import io.oakdom.xss.sanitizer.DefaultXssSanitizer;
 
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
+import java.io.IOException;
 import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
- * XSS-specific implementation of {@link OakdomFilter}.
+ * XSS servlet filter that sanitizes all incoming HTTP request parameters.
  *
- * <p>Determines whether a request parameter should be excluded from XSS filtering,
- * and resolves the {@link FilterMode} to apply, based on the rules defined in
- * {@link XssConfig}.
+ * <p>Implements both {@link OakdomFilter} (for filter-mode resolution and exclusion logic)
+ * and {@link Filter} (for servlet integration). On each request, parameter values are
+ * transparently sanitized when accessed via {@code getParameter()},
+ * {@code getParameterValues()}, or {@code getParameterMap()}.
  *
  * <h3>Usage — legacy Spring MVC</h3>
  * <p>Extend this class and override {@link #configure()} to provide a custom
@@ -29,6 +41,17 @@ import java.util.Collections;
  *     }
  * }
  * }</pre>
+ * <pre>{@code
+ * <!-- web.xml -->
+ * <filter>
+ *     <filter-name>xssFilter</filter-name>
+ *     <filter-class>com.example.MyXssFilter</filter-class>
+ * </filter>
+ * <filter-mapping>
+ *     <filter-name>xssFilter</filter-name>
+ *     <url-pattern>/*</url-pattern>
+ * </filter-mapping>
+ * }</pre>
  *
  * <h3>Filter mode priority</h3>
  * <ol>
@@ -38,7 +61,7 @@ import java.util.Collections;
  *   <li>Global filter mode (least specific)</li>
  * </ol>
  */
-public class OakdomXssFilter implements OakdomFilter {
+public class OakdomXssFilter implements OakdomFilter, Filter {
 
     private final XssConfig config;
     private final DefaultXssSanitizer blacklistSanitizer;
@@ -68,6 +91,52 @@ public class OakdomXssFilter implements OakdomFilter {
         this.whitelistSanitizer = DefaultXssSanitizer.of(FilterMode.WHITELIST, config);
     }
 
+    // -------------------------------------------------------------------------
+    // javax.servlet.Filter
+    // -------------------------------------------------------------------------
+
+    /**
+     * No-op. Configuration is provided via {@link #configure()} or the constructor.
+     *
+     * @param filterConfig the filter configuration provided by the servlet container
+     */
+    @Override
+    public void init(FilterConfig filterConfig) throws ServletException {
+    }
+
+    /**
+     * Wraps the incoming {@link HttpServletRequest} with an XSS-sanitizing wrapper
+     * and passes it down the filter chain.
+     *
+     * <p>Parameter values are sanitized lazily — only when accessed by downstream
+     * code via {@code getParameter()}, {@code getParameterValues()}, or
+     * {@code getParameterMap()}.
+     *
+     * @param request  the incoming servlet request
+     * @param response the servlet response
+     * @param chain    the filter chain
+     */
+    @Override
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+            throws IOException, ServletException {
+        if (request instanceof HttpServletRequest) {
+            chain.doFilter(new XssHttpRequestWrapper((HttpServletRequest) request), response);
+        } else {
+            chain.doFilter(request, response);
+        }
+    }
+
+    /**
+     * No-op.
+     */
+    @Override
+    public void destroy() {
+    }
+
+    // -------------------------------------------------------------------------
+    // Sanitization
+    // -------------------------------------------------------------------------
+
     /**
      * Sanitizes the given value using the sanitizer configured for the specified
      * {@link FilterMode}.
@@ -83,6 +152,10 @@ public class OakdomXssFilter implements OakdomFilter {
     public String sanitize(String value, FilterMode filterMode) {
         return (filterMode == FilterMode.WHITELIST ? whitelistSanitizer : blacklistSanitizer).sanitize(value);
     }
+
+    // -------------------------------------------------------------------------
+    // OakdomFilter
+    // -------------------------------------------------------------------------
 
     /**
      * Returns the {@link XssConfig} to use for this filter.
@@ -104,11 +177,6 @@ public class OakdomXssFilter implements OakdomFilter {
     /**
      * Returns {@code true} if the given request URI and parameter combination
      * matches any of the configured exclude rules.
-     *
-     * <p>A rule with both a URL pattern and a parameter name matches only when
-     * both conditions are satisfied. A rule with only a URL pattern matches any
-     * parameter on that URL. A rule with only a parameter name matches that
-     * parameter on any URL.
      *
      * @param requestUri    the request URI
      * @param parameterName the parameter name
@@ -162,6 +230,10 @@ public class OakdomXssFilter implements OakdomFilter {
         return config.getGlobalFilterMode();
     }
 
+    // -------------------------------------------------------------------------
+    // Internal helpers
+    // -------------------------------------------------------------------------
+
     private boolean matchesExcludeRule(XssConfig.ExcludeRule rule, String requestUri, String parameterName) {
         String urlPattern = rule.getUrlPattern();
         String paramName = rule.getParameterName();
@@ -187,5 +259,72 @@ public class OakdomXssFilter implements OakdomFilter {
 
     private boolean matchesParameter(String paramName, String parameterName) {
         return paramName.equals(parameterName);
+    }
+
+    // -------------------------------------------------------------------------
+    // Inner class: HTTP request wrapper
+    // -------------------------------------------------------------------------
+
+    /**
+     * {@link HttpServletRequestWrapper} that sanitizes parameter values on access.
+     */
+    private class XssHttpRequestWrapper extends HttpServletRequestWrapper {
+
+        private final String requestUri;
+
+        XssHttpRequestWrapper(HttpServletRequest request) {
+            super(request);
+            this.requestUri = request.getRequestURI();
+        }
+
+        @Override
+        public String getParameter(String name) {
+            if (shouldSkip(requestUri, name)) {
+                return super.getParameter(name);
+            }
+            String value = super.getParameter(name);
+            if (value == null) {
+                return null;
+            }
+            return sanitize(value, resolveFilterMode(requestUri, name));
+        }
+
+        @Override
+        public String[] getParameterValues(String name) {
+            if (shouldSkip(requestUri, name)) {
+                return super.getParameterValues(name);
+            }
+            String[] values = super.getParameterValues(name);
+            if (values == null) {
+                return null;
+            }
+            FilterMode mode = resolveFilterMode(requestUri, name);
+            String[] sanitized = new String[values.length];
+            for (int i = 0; i < values.length; i++) {
+                sanitized[i] = sanitize(values[i], mode);
+            }
+            return sanitized;
+        }
+
+        @Override
+        public Map<String, String[]> getParameterMap() {
+            Map<String, String[]> original = super.getParameterMap();
+            Map<String, String[]> result = new LinkedHashMap<>();
+            for (Map.Entry<String, String[]> entry : original.entrySet()) {
+                String name = entry.getKey();
+                if (shouldSkip(requestUri, name)) {
+                    result.put(name, entry.getValue());
+                } else {
+                    FilterMode mode = resolveFilterMode(requestUri, name);
+                    String[] values = entry.getValue();
+                    String[] sanitized = new String[values.length];
+                    for (int i = 0; i < values.length; i++) {
+                        sanitized[i] = sanitize(values[i], mode);
+                    }
+                    result.put(name, sanitized);
+                }
+            }
+            return Collections.unmodifiableMap(result);
+        }
     }
 }
