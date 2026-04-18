@@ -107,7 +107,7 @@ public class MyXssFilter extends OakdomXssFilter {
 </filter-mapping>
 ```
 
-Alternatively, pass an `XssConfig` instance directly to the constructor (useful in non-web.xml setups):
+Alternatively, pass an `XssConfig` instance directly to the constructor:
 
 ```java
 OakdomXssFilter filter = new OakdomXssFilter(
