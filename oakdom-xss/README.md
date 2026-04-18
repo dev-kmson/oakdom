@@ -32,7 +32,7 @@ implementation 'io.oakdom:oakdom-xss:{version}'
 
 ## Quick Start
 
-Register `OakdomXssFilter` in `web.xml`. That's it — all request parameters are sanitized with the default blacklist mode out of the box.
+Register `OakdomXssFilter` in `web.xml`. That's it — all request parameters are sanitized with the default BLACKLIST mode out of the box.
 
 ```xml
 <filter>

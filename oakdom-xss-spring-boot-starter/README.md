@@ -1,0 +1,230 @@
+# oakdom-xss-spring-boot-starter
+
+XSS auto-configuration for Spring Boot 2.x applications.
+
+Registers `OakdomXssFilter` automatically — no `web.xml`, no manual filter bean required. Add the dependency and all request parameters are sanitized out of the box.
+
+## Requirements
+
+- JDK 1.8+
+- Spring Boot 2.x
+
+## Installation
+
+**Maven**
+```xml
+<dependency>
+    <groupId>io.oakdom</groupId>
+    <artifactId>oakdom-xss-spring-boot-starter</artifactId>
+    <version>{version}</version>
+</dependency>
+```
+
+**Gradle**
+```groovy
+implementation 'io.oakdom:oakdom-xss-spring-boot-starter:{version}'
+```
+
+## Quick Start
+
+Add the dependency. That's it — all request parameters are sanitized with the default BLACKLIST mode on every request.
+
+> The default behavior escapes `&`, `<`, `>`, `"`, `'` in every parameter value of every request.
+
+---
+
+## Configuration
+
+All settings are bound under the `oakdom.xss` prefix in `application.properties` or `application.yml`.
+
+### Basic properties
+
+| Property | Default | Description |
+|----------|---------|-------------|
+| `oakdom.xss.enabled` | `true` | Enable or disable the XSS filter |
+| `oakdom.xss.global-filter-mode` | `BLACKLIST` | Global filter mode: `BLACKLIST` or `WHITELIST` |
+| `oakdom.xss.exclude-urls` | (none) | Comma-separated URL patterns to skip filtering entirely |
+| `oakdom.xss.exclude-params` | (none) | Comma-separated parameter names to skip filtering on any URL |
+| `oakdom.xss.filter-order` | `Integer.MIN_VALUE` | Filter chain order (default runs before all other filters) |
+
+### Filter rules
+
+Override the global filter mode for specific URLs or parameters.
+
+| Property | Description |
+|----------|-------------|
+| `oakdom.xss.filter-rules[n].url-pattern` | Ant-style URL pattern (optional) |
+| `oakdom.xss.filter-rules[n].param` | Parameter name (optional) |
+| `oakdom.xss.filter-rules[n].mode` | `BLACKLIST` or `WHITELIST` |
+
+If both `url-pattern` and `param` are set, the rule applies to that combination. If only `url-pattern` is set, the rule applies to all parameters on that URL. If only `param` is set, the rule applies to that parameter on any URL.
+
+### Exclude rules
+
+Skip XSS filtering entirely for a specific URL and parameter combination.
+
+| Property | Description |
+|----------|-------------|
+| `oakdom.xss.exclude-rules[n].url-pattern` | Ant-style URL pattern |
+| `oakdom.xss.exclude-rules[n].param` | Parameter name |
+
+### Example
+
+```properties
+oakdom.xss.global-filter-mode=BLACKLIST
+
+# Apply WHITELIST mode to the 'content' parameter on /api/editor/**
+oakdom.xss.filter-rules[0].url-pattern=/api/editor/**
+oakdom.xss.filter-rules[0].param=content
+oakdom.xss.filter-rules[0].mode=WHITELIST
+
+# Apply WHITELIST mode to all parameters on /api/public/**
+oakdom.xss.filter-rules[1].url-pattern=/api/public/**
+oakdom.xss.filter-rules[1].mode=WHITELIST
+
+# Apply WHITELIST mode to 'htmlBody' on any URL
+oakdom.xss.filter-rules[2].param=htmlBody
+oakdom.xss.filter-rules[2].mode=WHITELIST
+
+# Skip filtering for specific URLs or parameters
+oakdom.xss.exclude-urls=/api/upload/**,/api/raw/**
+oakdom.xss.exclude-params=csrfToken
+
+# Skip filtering for 'rawData' only on /api/editor/**
+oakdom.xss.exclude-rules[0].url-pattern=/api/editor/**
+oakdom.xss.exclude-rules[0].param=rawData
+```
+
+---
+
+## Filter Modes
+
+### BLACKLIST (default)
+
+Escapes a defined set of HTML-significant characters. Safe for most general-purpose form inputs where HTML is not expected.
+
+| Character | Escaped to |
+|-----------|-----------|
+| `&` | `&amp;` |
+| `<` | `&lt;` |
+| `>` | `&gt;` |
+| `"` | `&quot;` |
+| `'` | `&#x27;` |
+
+### WHITELIST
+
+Intended for rich text editor inputs where users are expected to submit HTML. Allows a carefully curated set of safe tags and attributes while escaping everything else. Safe tags include headings, paragraphs, lists, tables, links, images, video, and more. The `style` attribute is allowed but CSS-sanitized — only safe properties pass through and dangerous patterns (`expression()`, `javascript:`, `vbscript:`, `-moz-binding`, `@import`) are always rejected.
+
+Use WHITELIST mode selectively — only for parameters that genuinely accept HTML content.
+
+---
+
+## Blacklist Customization
+
+The default blacklist escapes five characters. You can add or remove characters via properties.
+
+```properties
+# Add / and ` to the escape set
+oakdom.xss.add-escape-chars=/,`
+
+# Remove ' from the escape set (discouraged — degrades XSS protection)
+oakdom.xss.remove-escape-chars='
+```
+
+> Removing any of the five default characters is permitted but strongly discouraged.
+
+---
+
+## Whitelist Customization
+
+The whitelist has built-in defaults for allowed HTML tags and CSS properties. You can extend or narrow them via properties.
+
+### Allowed tags
+
+```properties
+# Allow <iframe> and <embed> in addition to defaults
+oakdom.xss.add-allowed-tags=iframe,embed
+
+# Remove <strike> from the default allowed set
+oakdom.xss.remove-allowed-tags=strike
+```
+
+### Allowed CSS properties
+
+```properties
+# Allow additional CSS properties
+oakdom.xss.add-allowed-css-properties=position,z-index
+
+# Remove a CSS property from the default allowed set
+oakdom.xss.remove-allowed-css-properties=float
+```
+
+### Default allowed HTML tags
+
+| Category | Tags |
+|----------|------|
+| Inline | `b`, `i`, `em`, `strong`, `u`, `s`, `strike`, `small`, `sub`, `sup`, `cite`, `q`, `code`, `span`, `mark`, `abbr`, `del`, `ins`, `time`, `kbd`, `var`, `samp`, `wbr`, `ruby`, `rt`, `rp`, `bdi`, `bdo`, `dfn` |
+| Block | `p`, `div`, `h1`–`h6`, `blockquote`, `pre`, `ul`, `ol`, `li`, `dl`, `dt`, `dd`, `article`, `section`, `aside`, `header`, `footer`, `main`, `nav`, `address`, `details`, `summary`, `hgroup`, `meter`, `progress` |
+| Media | `a`, `img`, `picture`, `figure`, `figcaption`, `video`, `audio`, `source`, `track` |
+| Table | `table`, `thead`, `tbody`, `tfoot`, `tr`, `th`, `td`, `caption`, `col`, `colgroup` |
+| Other | `br`, `hr` |
+
+### Default allowed CSS property categories
+
+| Category | Examples |
+|----------|---------|
+| Color & background | `color`, `background`, `background-color`, `background-image`, `background-clip`, … |
+| Typography | `font-*`, `text-*`, `line-height`, `letter-spacing`, `word-spacing`, `white-space`, `direction`, `writing-mode`, `ruby-*`, … |
+| Box model | `margin`, `padding` and all physical/logical longhands |
+| Border | `border` and all physical/logical longhands, `border-image-*`, `border-radius` variants |
+| Sizing & display | `width`, `height`, `min-*`, `max-*`, logical sizes, `display`, `visibility`, `opacity`, `float`, `overflow`, `box-sizing`, `box-shadow`, `clip-path`, `aspect-ratio`, … |
+| Flexbox | `flex`, `flex-*`, `justify-*`, `align-*`, `place-*`, `gap`, `order` |
+| Grid | `grid`, `grid-template-*`, `grid-column-*`, `grid-row-*`, `grid-auto-*`, `grid-area` |
+| Multi-column | `columns`, `column-count`, `column-width`, `column-rule-*`, `column-span` |
+| Transform & animation | `transform`, `rotate`, `scale`, `translate`, `animation`, `transition`, `will-change`, `filter`, `backdrop-filter`, … |
+| Scroll-driven animation | `animation-timeline`, `animation-range-*`, `scroll-timeline-*`, `view-timeline-*` |
+| Scroll | `scroll-behavior`, `scroll-snap-*`, `scroll-padding-*`, `scroll-margin-*`, `overscroll-behavior-*`, `scrollbar-*` |
+| UI & interaction | `cursor`, `resize`, `accent-color`, `caret-color`, `appearance`, `user-select`, `touch-action` |
+| Container queries | `container`, `container-type`, `container-name`, `content-visibility`, `contain`, `contain-intrinsic-*` |
+| Mask | `mask` and all longhands, `mask-border-*`, `-webkit-mask-*` |
+| SVG presentation | `fill`, `stroke` and all longhands, `clip-rule`, `paint-order`, `dominant-baseline`, `stop-color`, `marker-*`, `d`, `cx`, `cy`, `r`, `rx`, `ry`, `x`, `y`, … |
+| Other | `list-style-*`, `table-layout`, `counter-*`, `shape-outside`, `quotes`, `orphans`, `widows`, `break-*`, `color-scheme`, `isolation`, `zoom`, … |
+
+### Intentionally excluded CSS properties
+
+The following CSS properties are not included in the default whitelist for security reasons:
+
+| Property | Reason |
+|----------|--------|
+| `position`, `z-index`, `inset-*` | Phishing overlay risk — elements can be positioned over other content |
+| `mix-blend-mode` | Overlay-based UI obscuring attacks |
+| `pointer-events` | Clickjacking via disabling UI elements |
+
+These can be explicitly added via `oakdom.xss.add-allowed-css-properties` if your application requires them and you accept the risk.
+
+---
+
+## Rule Priority
+
+When multiple rules could apply, the most specific rule wins:
+
+| Priority | Rule type |
+|----------|-----------|
+| 1 (highest) | URL pattern + parameter name |
+| 2 | Parameter name only |
+| 3 | URL pattern only |
+| 4 (lowest) | Global filter mode |
+
+---
+
+## Disabling the Filter
+
+```properties
+oakdom.xss.enabled=false
+```
+
+---
+
+## License
+
+Apache License 2.0. See [LICENSE](../LICENSE) for details.
