@@ -15,15 +15,21 @@ oakdom covers what Spring Security does not: input sanitization for XSS, SQL inj
 
 ## Modules
 
-| Module | Description |
-|--------|-------------|
-| `oakdom-core` | Pure Java common interfaces |
-| `oakdom-web` | Spring MVC common interfaces |
-| `oakdom-xss` | XSS sanitization for legacy Spring MVC |
-| `oakdom-xss-spring-boot-starter` | Auto-configuration for Spring Boot 2.x |
-| `oakdom-xss-spring-boot3-starter` | Auto-configuration for Spring Boot 3.x |
-| `oakdom-all-spring-boot-starter` | All-in-one starter for Spring Boot 2.x |
-| `oakdom-all-spring-boot3-starter` | All-in-one starter for Spring Boot 3.x |
+| Module | Description | Docs |
+|--------|-------------|------|
+| `oakdom-xss` | XSS sanitization for legacy Spring MVC and pure servlet environments | [README](oakdom-xss/README.md) |
+| `oakdom-xss-spring-boot-starter` | Auto-configured XSS filter for Spring Boot 2.x | _Coming soon_ |
+| `oakdom-xss-spring-boot3-starter` | Auto-configured XSS filter for Spring Boot 3.x | _Coming soon_ |
+| `oakdom-all-spring-boot-starter` | All-in-one security starter for Spring Boot 2.x | _Coming soon_ |
+| `oakdom-all-spring-boot3-starter` | All-in-one security starter for Spring Boot 3.x | _Coming soon_ |
+
+## Which Module Should I Use?
+
+| Environment | Dependency |
+|-------------|------------|
+| Legacy Spring MVC / pure servlet | `oakdom-xss` |
+| Spring Boot 2.x | `oakdom-xss-spring-boot-starter` |
+| Spring Boot 3.x | `oakdom-xss-spring-boot3-starter` |
 
 ## License
 
