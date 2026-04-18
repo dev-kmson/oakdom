@@ -1,18 +1,18 @@
-# oakdom-xss
+# oakdom-xss-jakarta
 
-XSS sanitization filter for legacy Spring MVC and servlet environments using the `javax.servlet` API.
+XSS sanitization filter for legacy Spring MVC and servlet environments using the `jakarta.servlet` API.
 
 Wraps every incoming HTTP request with a sanitizing wrapper that transparently cleans parameter values before they reach your application code — no changes to your controllers required.
 
 ## Requirements
 
-- JDK 1.8+
-- `javax.servlet` API (Tomcat 9 or below, Jetty 10 or below)
-- Compatible with any version of Spring MVC (no Spring dependency required at runtime)
+- JDK 11+
+- `jakarta.servlet` API (Tomcat 10.1+)
+- Compatible with any version of Spring MVC that supports `jakarta.servlet` (no Spring dependency required at runtime)
 
-> **Note:** This module targets `javax.servlet` only. Environments using `jakarta.servlet`
-> (Tomcat 10.1+) are not supported by this module.
-> Jakarta support is provided separately via `oakdom-xss-jakarta`.
+> **Note:** This module targets `jakarta.servlet` only. Environments using `javax.servlet`
+> (Tomcat 9 or below) are not supported by this module.
+> javax.servlet support is provided separately via `oakdom-xss`.
 
 ## Installation
 
@@ -20,14 +20,14 @@ Wraps every incoming HTTP request with a sanitizing wrapper that transparently c
 ```xml
 <dependency>
     <groupId>io.oakdom</groupId>
-    <artifactId>oakdom-xss</artifactId>
+    <artifactId>oakdom-xss-jakarta</artifactId>
     <version>{version}</version>
 </dependency>
 ```
 
 **Gradle**
 ```groovy
-implementation 'io.oakdom:oakdom-xss:{version}'
+implementation 'io.oakdom:oakdom-xss-jakarta:{version}'
 ```
 
 ## Quick Start
@@ -51,7 +51,7 @@ Register `OakdomXssFilter` in `web.xml`. That's it — all request parameters ar
 
 ## Filter Modes
 
-oakdom-xss supports two filter modes.
+oakdom-xss-jakarta supports two filter modes.
 
 ### BLACKLIST (default)
 

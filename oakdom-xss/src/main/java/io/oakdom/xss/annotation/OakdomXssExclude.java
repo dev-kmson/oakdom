@@ -11,9 +11,9 @@ import java.lang.annotation.Target;
  * <p>When applied to a <strong>method</strong>, all parameters of that method
  * bypass XSS sanitization:
  * <pre>{@code
- * @OakdomXssExclude
- * @PostMapping("/raw")
- * public ResponseEntity<String> uploadRaw(@RequestBody String content) {
+ * &#64;OakdomXssExclude
+ * &#64;PostMapping("/raw")
+ * public ResponseEntity<String> uploadRaw(&#64;RequestBody String content) {
  *     // 'content' is not XSS-filtered
  * }
  * }</pre>
@@ -21,10 +21,10 @@ import java.lang.annotation.Target;
  * <p>When applied to a <strong>parameter</strong>, only that parameter bypasses
  * XSS sanitization:
  * <pre>{@code
- * @PostMapping("/article")
+ * &#64;PostMapping("/article")
  * public ResponseEntity<String> saveArticle(
- *         @RequestParam String title,
- *         @OakdomXssExclude @RequestParam String rawHtml) {
+ *         &#64;RequestParam String title,
+ *         &#64;OakdomXssExclude &#64;RequestParam String rawHtml) {
  *     // 'title' is XSS-filtered; 'rawHtml' is not
  * }
  * }</pre>

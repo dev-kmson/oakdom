@@ -13,9 +13,9 @@ import java.lang.annotation.Target;
  * <p>When applied to a <strong>method</strong>, the specified filter mode is used
  * for all parameters of that method:
  * <pre>{@code
- * @OakdomXssFilterMode(FilterMode.WHITELIST)
- * @PostMapping("/editor")
- * public ResponseEntity<String> saveContent(@RequestBody String html) {
+ * &#64;OakdomXssFilterMode(FilterMode.WHITELIST)
+ * &#64;PostMapping("/editor")
+ * public ResponseEntity<String> saveContent(&#64;RequestBody String html) {
  *     // 'html' is sanitized with WHITELIST mode
  * }
  * }</pre>
@@ -23,10 +23,10 @@ import java.lang.annotation.Target;
  * <p>When applied to a <strong>parameter</strong>, only that parameter uses the
  * specified filter mode:
  * <pre>{@code
- * @PostMapping("/article")
+ * &#64;PostMapping("/article")
  * public ResponseEntity<String> saveArticle(
- *         @RequestParam String title,
- *         @OakdomXssFilterMode(FilterMode.WHITELIST) @RequestParam String body) {
+ *         &#64;RequestParam String title,
+ *         &#64;OakdomXssFilterMode(FilterMode.WHITELIST) &#64;RequestParam String body) {
  *     // 'title' uses the global/URL filter mode; 'body' uses WHITELIST
  * }
  * }</pre>

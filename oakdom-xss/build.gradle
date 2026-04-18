@@ -5,8 +5,7 @@ dependencies {
 
     compileOnly "javax.servlet:javax.servlet-api:${rootProject.ext.servletApiVersion}"
     compileOnly "jakarta.servlet:jakarta.servlet-api:${rootProject.ext.jakartaServletVersion}"
-    compileOnly "org.springframework:spring-webmvc:${rootProject.ext.springVersion}"
-    compileOnly "com.fasterxml.jackson.core:jackson-databind:${rootProject.ext.jacksonVersion}"
+compileOnly "com.fasterxml.jackson.core:jackson-databind:${rootProject.ext.jacksonVersion}"
 
     testCompileOnly "javax.servlet:javax.servlet-api:${rootProject.ext.servletApiVersion}"
     testCompileOnly "com.fasterxml.jackson.core:jackson-databind:${rootProject.ext.jacksonVersion}"

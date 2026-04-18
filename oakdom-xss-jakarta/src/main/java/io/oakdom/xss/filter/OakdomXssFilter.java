@@ -6,14 +6,14 @@ import io.oakdom.web.filter.OakdomFilter;
 import io.oakdom.xss.config.XssConfig;
 import io.oakdom.xss.sanitizer.DefaultXssSanitizer;
 
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletRequestWrapper;
+import jakarta.servlet.Filter;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.FilterConfig;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequestWrapper;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -27,7 +27,11 @@ import java.util.Map;
  * transparently sanitized when accessed via {@code getParameter()},
  * {@code getParameterValues()}, or {@code getParameterMap()}.
  *
- * <h3>Usage — legacy Spring MVC</h3>
+ * <p>This variant targets {@code jakarta.servlet} environments (Tomcat 10+).
+ * For {@code javax.servlet} environments (Tomcat 9 or below), use
+ * {@code oakdom-xss} instead.
+ *
+ * <h3>Usage — legacy Spring MVC (jakarta.servlet)</h3>
  * <p>Extend this class and override {@link #configure()} to provide a custom
  * {@link XssConfig}. Register the subclass as a servlet filter in {@code web.xml}:
  * <pre>{@code
@@ -92,7 +96,7 @@ public class OakdomXssFilter implements OakdomFilter, Filter {
     }
 
     // -------------------------------------------------------------------------
-    // javax.servlet.Filter
+    // jakarta.servlet.Filter
     // -------------------------------------------------------------------------
 
     /**
