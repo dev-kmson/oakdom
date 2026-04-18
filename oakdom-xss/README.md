@@ -260,7 +260,7 @@ XssConfig.builder()
 
 ### Intentionally excluded CSS properties
 
-The following CSS properties are excluded by default for security reasons and are not added even if requested implicitly:
+The following CSS properties are not included in the default whitelist for security reasons:
 
 | Property | Reason |
 |----------|--------|
