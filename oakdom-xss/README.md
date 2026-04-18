@@ -1,13 +1,17 @@
 # oakdom-xss
 
-XSS sanitization filter for legacy Spring MVC and pure servlet environments.
+XSS sanitization filter for legacy Spring MVC and pure servlet environments using the `javax.servlet` API.
 
 Wraps every incoming HTTP request with a sanitizing wrapper that transparently cleans parameter values before they reach your application code — no changes to your controllers required.
 
 ## Requirements
 
 - JDK 1.8+
-- Servlet API 3.0+ (`javax.servlet` or `jakarta.servlet`)
+- `javax.servlet` API (Tomcat 9 or below, Jetty 10 or below)
+
+> **Note:** This module targets `javax.servlet` only. Environments using `jakarta.servlet`
+> (Tomcat 10+, Spring Boot 3.x) are not supported by this module.
+> Jakarta support is provided separately via `oakdom-xss-jakarta` _(coming soon)_.
 
 ## Installation
 
