@@ -39,7 +39,8 @@ import java.util.regex.Pattern;
  * {@code class}, {@code id}, {@code title}, {@code lang}, {@code dir}, {@code style}.
  * The {@code style} attribute is sanitized — only properties from the configured
  * CSS allowlist are kept, and dangerous patterns ({@code expression()},
- * {@code javascript:}, {@code behavior:}) are always removed. CSS custom properties
+ * {@code javascript:}, {@code vbscript:}, {@code behavior:}, {@code -moz-binding},
+ * {@code @import}) are always removed. CSS custom properties
  * ({@code --*}) are always permitted regardless of the configured allowlist because
  * they cannot execute code; their values still pass the full dangerous-value and
  * URL checks. {@code url()} values inside any CSS property are validated against
@@ -178,9 +179,96 @@ public class WhitelistXssFilterRule implements XssFilterRule {
     /**
      * Default set of CSS properties safe to allow in {@code style} attributes.
      *
-     * <p>{@code background} and {@code background-image} are included because they may
-     * reference image URLs in editor-generated content. Their {@code url()} values are
-     * individually validated by {@link #isSafeUrl(String)} before being accepted.
+     * <p>The set covers the following major categories:
+     * <ul>
+     *   <li><b>Color &amp; background</b> — {@code color}, {@code background},
+     *       {@code background-color}, {@code background-image}, and all background
+     *       longhands including {@code background-clip}, {@code background-blend-mode},
+     *       and {@code -webkit-background-clip}.</li>
+     *   <li><b>Typography</b> — all {@code font-*} longhands (including
+     *       {@code font-variant-*}, {@code font-synthesis-*}, {@code font-optical-sizing},
+     *       {@code font-palette}, {@code font-variation-settings}), all {@code text-*}
+     *       longhands (including {@code text-decoration-*}, {@code text-emphasis-*},
+     *       {@code text-wrap-*}, {@code text-box-*}), {@code line-height},
+     *       {@code letter-spacing}, {@code word-spacing}, {@code white-space},
+     *       {@code hyphens}, {@code direction}, {@code unicode-bidi},
+     *       {@code writing-mode}, {@code ruby-*}, and vendor-prefixed smoothing
+     *       ({@code -webkit-font-smoothing}, {@code -moz-osx-font-smoothing},
+     *       {@code -webkit-text-stroke-*}, {@code -webkit-text-fill-color}).</li>
+     *   <li><b>Box model</b> — {@code margin}, {@code padding}, and all physical and
+     *       logical longhands ({@code margin-inline-*}, {@code padding-block-*},
+     *       etc.).</li>
+     *   <li><b>Border</b> — all physical and logical border longhands including
+     *       {@code border-image-*}, {@code border-inline-*}, {@code border-block-*},
+     *       and {@code border-*-radius} variants.</li>
+     *   <li><b>Sizing &amp; display</b> — {@code width}, {@code height},
+     *       {@code min-*}/{@code max-*}, logical sizes ({@code inline-size},
+     *       {@code block-size}), {@code display}, {@code visibility}, {@code opacity},
+     *       {@code float}, {@code clear}, {@code vertical-align}, {@code aspect-ratio},
+     *       {@code object-fit}, {@code object-position}, {@code overflow} and longhands,
+     *       {@code box-sizing}, {@code box-shadow}, {@code clip-path}.</li>
+     *   <li><b>Flexbox</b> — {@code flex}, all {@code flex-*} longhands,
+     *       {@code justify-content}/{@code justify-items}/{@code justify-self},
+     *       {@code align-*}, {@code place-*}, {@code gap}, {@code order}.</li>
+     *   <li><b>Grid</b> — {@code grid}, all {@code grid-template-*},
+     *       {@code grid-column-*}/{@code grid-row-*}, {@code grid-auto-*},
+     *       {@code grid-area}.</li>
+     *   <li><b>Multi-column</b> — {@code columns}, {@code column-count},
+     *       {@code column-width}, {@code column-rule-*}, {@code column-span},
+     *       {@code column-fill}.</li>
+     *   <li><b>Transform &amp; animation</b> — {@code transform} and all longhands
+     *       ({@code rotate}, {@code scale}, {@code translate}, {@code transform-origin},
+     *       {@code transform-style}, {@code perspective}, {@code perspective-origin},
+     *       {@code backface-visibility}), {@code animation} and all longhands,
+     *       {@code transition} and all longhands, {@code will-change},
+     *       {@code offset-path} and longhands, {@code filter}, {@code backdrop-filter},
+     *       {@code -webkit-backdrop-filter}.</li>
+     *   <li><b>Scroll-driven animation</b> — {@code animation-timeline},
+     *       {@code animation-range} and longhands, {@code scroll-timeline} and longhands,
+     *       {@code view-timeline} and longhands.</li>
+     *   <li><b>Scroll</b> — {@code scroll-behavior}, {@code scroll-snap-*},
+     *       {@code scroll-padding-*}, {@code scroll-margin-*},
+     *       {@code overscroll-behavior-*}, {@code scrollbar-width},
+     *       {@code scrollbar-color}, {@code scrollbar-gutter}.</li>
+     *   <li><b>UI &amp; interaction</b> — {@code cursor}, {@code resize},
+     *       {@code accent-color}, {@code caret-color}, {@code appearance},
+     *       {@code -webkit-appearance}, {@code user-select}, {@code touch-action},
+     *       {@code -webkit-tap-highlight-color}, {@code -webkit-touch-callout}.</li>
+     *   <li><b>Container queries</b> — {@code container}, {@code container-type},
+     *       {@code container-name}, {@code content-visibility}, {@code contain},
+     *       {@code contain-intrinsic-*}.</li>
+     *   <li><b>Mask</b> — {@code mask} and all longhands, {@code mask-border} and
+     *       all longhands, and {@code -webkit-mask-*} variants.</li>
+     *   <li><b>SVG presentation</b> — {@code fill}, {@code fill-opacity},
+     *       {@code fill-rule}, {@code stroke} and all longhands, {@code clip-rule},
+     *       {@code paint-order}, {@code text-anchor}, {@code dominant-baseline},
+     *       {@code alignment-baseline}, {@code baseline-shift}, {@code vector-effect},
+     *       {@code shape-rendering}, {@code color-rendering},
+     *       {@code color-interpolation-*}, {@code marker-*}, {@code stop-color},
+     *       {@code stop-opacity}, {@code flood-color}, {@code flood-opacity},
+     *       {@code lighting-color}, and geometry attributes
+     *       ({@code d}, {@code cx}, {@code cy}, {@code r}, {@code rx}, {@code ry},
+     *       {@code x}, {@code y}).</li>
+     *   <li><b>Other</b> — {@code list-style-*}, {@code table-layout},
+     *       {@code caption-side}, {@code empty-cells}, {@code quotes},
+     *       {@code counter-reset}/{@code counter-increment}/{@code counter-set},
+     *       {@code shape-outside}, {@code initial-letter}, {@code orphans},
+     *       {@code widows}, {@code break-*}, {@code page-break-*},
+     *       {@code print-color-adjust}, {@code color-scheme},
+     *       {@code view-transition-name}, {@code forced-color-adjust},
+     *       {@code isolation}, {@code zoom}, {@code interpolate-size},
+     *       {@code image-rendering}, {@code image-orientation},
+     *       {@code text-size-adjust}, {@code -webkit-text-size-adjust}.</li>
+     * </ul>
+     *
+     * <p>{@code background-image} and any property accepting {@code url()} are included
+     * because they may reference image URLs in editor-generated content. All
+     * {@code url()} values are individually validated by {@link #isSafeUrl(String)}
+     * before being accepted.
+     *
+     * <p>The following CSS properties are intentionally absent for security reasons:
+     * {@code position}, {@code z-index}, {@code inset-*} (phishing overlay risk),
+     * {@code mix-blend-mode} (UI obscuring), and {@code pointer-events} (clickjacking).
      */
     static final Set<String> DEFAULT_ALLOWED_CSS_PROPERTIES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
             "color", "background-color", "background", "background-image",
