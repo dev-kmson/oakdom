@@ -20,7 +20,7 @@ oakdom covers what Spring Security does not: input sanitization for XSS, SQL inj
 | `oakdom-xss` | XSS sanitization for legacy Spring MVC / servlet environments (`javax.servlet`, Tomcat 9 or below) | [README](oakdom-xss/README.md) |
 | `oakdom-xss-jakarta` | XSS sanitization for legacy Spring MVC / servlet environments (`jakarta.servlet`, Tomcat 10.1+, JDK 11+) | [README](oakdom-xss-jakarta/README.md) |
 | `oakdom-xss-spring-boot-starter` | Auto-configured XSS filter for Spring Boot 2.x | [README](oakdom-xss-spring-boot-starter/README.md) |
-| `oakdom-xss-spring-boot3-starter` | Auto-configured XSS filter for Spring Boot 3.x | _Coming soon_ |
+| `oakdom-xss-spring-boot3-starter` | Auto-configured XSS filter for Spring Boot 3.x | [README](oakdom-xss-spring-boot3-starter/README.md) |
 
 ## Which Module Should I Use?
 

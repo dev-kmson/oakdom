@@ -7,11 +7,17 @@ java {
 }
 
 dependencies {
-    api project(':oakdom-xss')
+    api project(':oakdom-xss-jakarta')
 
     compileOnly "jakarta.servlet:jakarta.servlet-api:${rootProject.ext.jakartaServletVersion}"
     compileOnly "com.fasterxml.jackson.core:jackson-databind:${rootProject.ext.jacksonVersion}"
 
     implementation "org.springframework.boot:spring-boot-autoconfigure:${rootProject.ext.springBoot3Version}"
-    compileOnly "org.springframework:spring-webmvc:${rootProject.ext.spring6Version}"
+
+    testImplementation "org.springframework.boot:spring-boot-test:${rootProject.ext.springBoot3Version}"
+    testImplementation "org.springframework.boot:spring-boot-test-autoconfigure:${rootProject.ext.springBoot3Version}"
+    testImplementation "org.springframework:spring-webmvc:${rootProject.ext.spring6Version}"
+    testImplementation "org.springframework:spring-test:${rootProject.ext.spring6Version}"
+    testCompileOnly "jakarta.servlet:jakarta.servlet-api:${rootProject.ext.jakartaServletVersion}"
+    testRuntimeOnly "jakarta.servlet:jakarta.servlet-api:${rootProject.ext.jakartaServletVersion}"
 }
