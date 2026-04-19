@@ -35,10 +35,23 @@ jobs:
       - name: Run tests
         run: ./gradlew test
 
-      - name: Publish to Maven Central
-        run: ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository
+      - name: Publish to local staging
+        run: ./gradlew publishMavenJavaPublicationToStagingDeployRepository
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+
+      - name: Bundle and upload to Maven Central
+        run: |
+          cd build/staging-deploy
+          zip -r ../../bundle.zip .
+          cd ../..
+          AUTH=$(printf '%s:%s' "$OSSRH_USERNAME" "$OSSRH_PASSWORD" | base64 -w 0)
+          RESPONSE=$(curl --silent --fail --request POST \
+            --header "Authorization: Bearer $AUTH" \
+            --form bundle=@bundle.zip \
+            "https://central.sonatype.com/api/v1/publisher/upload?publishingType=AUTOMATIC")
+          echo "Response: $RESPONSE"
         env:
           OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
-          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
