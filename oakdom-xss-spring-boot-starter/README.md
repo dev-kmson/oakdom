@@ -311,6 +311,21 @@ public class ArticleDto {
 
 Nested DTOs and collections are supported — annotations on nested DTO fields are applied recursively.
 
+`@JsonProperty` and `@JsonAlias` are honored. If the incoming JSON key differs from the Java field name, the annotation is still resolved correctly.
+
+```java
+public class ArticleDto {
+
+    @JsonProperty("raw_content")
+    @OakdomXssExclude
+    private String rawContent;  // JSON key "raw_content" → excluded
+
+    @JsonAlias({"html_body", "body_html"})
+    @OakdomXssFilterMode(FilterMode.WHITELIST)
+    private String htmlBody;    // JSON key "html_body" or "body_html" → WHITELIST
+}
+```
+
 ### JSON Body Behavior
 
 - **DTO field `@OakdomXssExclude`** — that field passes through as-is; all other fields are still filtered.
