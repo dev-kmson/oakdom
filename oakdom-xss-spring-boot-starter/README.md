@@ -19,13 +19,13 @@ Registers `OakdomXssFilter` automatically — no `web.xml`, no manual filter bea
 <dependency>
     <groupId>io.oakdom</groupId>
     <artifactId>oakdom-xss-spring-boot-starter</artifactId>
-    <version>{version}</version>
+    <version>1.0.0</version>
 </dependency>
 ```
 
 **Gradle**
 ```groovy
-implementation 'io.oakdom:oakdom-xss-spring-boot-starter:{version}'
+implementation 'io.oakdom:oakdom-xss-spring-boot-starter:1.0.0'
 ```
 
 ## Quick Start

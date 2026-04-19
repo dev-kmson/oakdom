@@ -1,7 +1,5 @@
 # oakdom
 
-> **⚠️ This project is currently under active development and is not yet available for production use.**
-
 A lightweight open-source library for defending against input-based web security vulnerabilities in Java/Spring environments.
 
 oakdom covers what Spring Security does not: input sanitization for XSS, SQL injection, CRLF, and similar threats. Add one dependency and it works.

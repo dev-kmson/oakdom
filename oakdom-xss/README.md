@@ -26,13 +26,13 @@ Wraps every incoming HTTP request with a sanitizing wrapper that transparently c
 <dependency>
     <groupId>io.oakdom</groupId>
     <artifactId>oakdom-xss</artifactId>
-    <version>{version}</version>
+    <version>1.0.0</version>
 </dependency>
 ```
 
 **Gradle**
 ```groovy
-implementation 'io.oakdom:oakdom-xss:{version}'
+implementation 'io.oakdom:oakdom-xss:1.0.0'
 ```
 
 ## Quick Start
