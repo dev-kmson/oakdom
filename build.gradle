@@ -57,8 +57,8 @@ subprojects {
             mavenJava(MavenPublication) {
                 from components.java
                 pom {
-                    name = project.name
-                    description = project.description
+                    name = providers.provider { project.name }
+                    description = providers.provider { project.description }
                     url = 'https://github.com/dev-kmson/oakdom'
                     licenses {
                         license {
