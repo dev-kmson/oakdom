@@ -289,27 +289,18 @@ public void handleBodyEditor(
         @OakdomXssFilterMode(FilterMode.WHITELIST) @RequestBody MyDto dto) { ... }
 ```
 
-### Annotation Priority
+### Priority
+
+When multiple sources could apply, the most specific wins:
 
 | Priority | Source |
 |----------|--------|
 | 1 (highest) | Parameter-level annotation (`@RequestParam` or `@RequestBody`) |
 | 2 | Method-level annotation |
-| 3 | Configuration-based rules (`XssConfig`) |
-| 4 (lowest) | Global filter mode |
-
----
-
-## Rule Priority
-
-When multiple rules could apply, the most specific rule wins:
-
-| Priority | Rule type |
-|----------|-----------|
-| 1 (highest) | URL pattern + parameter name |
-| 2 | Parameter name only |
-| 3 | URL pattern only |
-| 4 (lowest) | Global filter mode |
+| 3 | Config rule — URL pattern + parameter name |
+| 4 | Config rule — parameter name only |
+| 5 | Config rule — URL pattern only |
+| 6 (lowest) | Global filter mode |
 
 ---
 
