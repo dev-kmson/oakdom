@@ -88,18 +88,19 @@ public class OakdomXssAnnotationInterceptor implements HandlerInterceptor {
             OakdomXssExclude paramExclude = param.getParameterAnnotation(OakdomXssExclude.class);
             OakdomXssFilterMode paramMode = param.getParameterAnnotation(OakdomXssFilterMode.class);
 
-            if (paramExclude == null && paramMode == null) {
-                continue;
-            }
-
-            // @RequestBody parameter — controls entire body
+            // @RequestBody parameter — always capture DTO class for field annotation processing
             if (param.hasParameterAnnotation(RequestBody.class)) {
+                request.setAttribute(OakdomXssRequestAttributes.BODY_DTO_CLASS, param.getParameterType());
                 if (paramExclude != null) {
                     request.setAttribute(OakdomXssRequestAttributes.BODY_EXCLUDE, Boolean.TRUE);
                 }
                 if (paramMode != null) {
                     request.setAttribute(OakdomXssRequestAttributes.BODY_MODE, paramMode.value());
                 }
+                continue;
+            }
+
+            if (paramExclude == null && paramMode == null) {
                 continue;
             }
 

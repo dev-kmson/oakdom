@@ -53,5 +53,12 @@ public final class OakdomXssRequestAttributes {
      */
     public static final String BODY_MODE = "oakdom.xss.body.mode";
 
+    /**
+     * Set to the {@link Class} of the {@code @RequestBody} parameter so the XSS
+     * filter can read DTO field-level annotations ({@code @OakdomXssExclude},
+     * {@code @OakdomXssFilterMode}) during JSON body sanitization.
+     */
+    public static final String BODY_DTO_CLASS = "oakdom.xss.body.dto.class";
+
     private OakdomXssRequestAttributes() {}
 }

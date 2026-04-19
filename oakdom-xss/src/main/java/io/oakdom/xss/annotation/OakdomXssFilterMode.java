@@ -37,7 +37,7 @@ import java.lang.annotation.Target;
  * @see OakdomXssExclude
  * @see FilterMode
  */
-@Target({ElementType.METHOD, ElementType.PARAMETER})
+@Target({ElementType.METHOD, ElementType.PARAMETER, ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface OakdomXssFilterMode {
 

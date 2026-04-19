@@ -435,7 +435,8 @@ public class OakdomXssFilter implements OakdomFilter, Filter {
                     }
                     String raw = new String(rawBytes, encoding);
                     FilterMode mode = resolveFilterModeForBody();
-                    String sanitized = jsonProcessor.process(raw, mode);
+                    Class<?> dtoClass = (Class<?>) getAttribute(OakdomXssRequestAttributes.BODY_DTO_CLASS);
+                    String sanitized = jsonProcessor.process(raw, mode, dtoClass);
                     cachedBody = sanitized.getBytes(encoding);
                 }
             }
