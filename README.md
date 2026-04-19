@@ -2,7 +2,12 @@
 
 A lightweight open-source library for defending against input-based web security vulnerabilities in Java/Spring environments.
 
-oakdom covers what Spring Security does not: input sanitization for XSS, SQL injection, CRLF, and similar threats. Add one dependency and it works.
+oakdom covers what Spring Security does not: input sanitization for XSS and similar threats. Add one dependency and it works — no boilerplate, no manual filter registration required.
+
+- **Form parameters** (`application/x-www-form-urlencoded`, `multipart/form-data`, query string) — sanitized transparently on every request.
+- **JSON request bodies** (`application/json`) — all string values sanitized before application code reads the body.
+- **Annotation-based control** — override filtering behavior per handler method, parameter, or DTO field without touching configuration.
+- **Spring Boot auto-configuration** — zero setup for Spring Boot 2.x and 3.x environments.
 
 ## Supported Environments
 
