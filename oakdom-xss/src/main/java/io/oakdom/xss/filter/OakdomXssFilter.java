@@ -304,6 +304,8 @@ public class OakdomXssFilter implements OakdomFilter, Filter {
         private final String requestUri;
         private final boolean isJsonBody;
         private byte[] cachedBody;
+        private final Map<String, String[]> paramCache = new LinkedHashMap<>();
+        private boolean allParamsCached = false;
 
         XssHttpRequestWrapper(HttpServletRequest request) {
             super(request);
@@ -313,18 +315,36 @@ public class OakdomXssFilter implements OakdomFilter, Filter {
 
         @Override
         public String getParameter(String name) {
-            if (isParamExcluded(name)) {
-                return super.getParameter(name);
-            }
-            String value = super.getParameter(name);
-            if (value == null) {
-                return null;
-            }
-            return sanitize(value, resolveParamFilterMode(name));
+            String[] values = getOrCacheParam(name);
+            return (values != null && values.length > 0) ? values[0] : null;
         }
 
         @Override
         public String[] getParameterValues(String name) {
+            return getOrCacheParam(name);
+        }
+
+        @Override
+        public Map<String, String[]> getParameterMap() {
+            if (!allParamsCached) {
+                for (String name : super.getParameterMap().keySet()) {
+                    if (!paramCache.containsKey(name)) {
+                        paramCache.put(name, computeSanitized(name));
+                    }
+                }
+                allParamsCached = true;
+            }
+            return Collections.unmodifiableMap(paramCache);
+        }
+
+        private String[] getOrCacheParam(String name) {
+            if (!paramCache.containsKey(name)) {
+                paramCache.put(name, computeSanitized(name));
+            }
+            return paramCache.get(name);
+        }
+
+        private String[] computeSanitized(String name) {
             if (isParamExcluded(name)) {
                 return super.getParameterValues(name);
             }
@@ -338,27 +358,6 @@ public class OakdomXssFilter implements OakdomFilter, Filter {
                 sanitized[i] = sanitize(values[i], mode);
             }
             return sanitized;
-        }
-
-        @Override
-        public Map<String, String[]> getParameterMap() {
-            Map<String, String[]> original = super.getParameterMap();
-            Map<String, String[]> result = new LinkedHashMap<>();
-            for (Map.Entry<String, String[]> entry : original.entrySet()) {
-                String name = entry.getKey();
-                if (isParamExcluded(name)) {
-                    result.put(name, entry.getValue());
-                } else {
-                    FilterMode mode = resolveParamFilterMode(name);
-                    String[] values = entry.getValue();
-                    String[] sanitized = new String[values.length];
-                    for (int i = 0; i < values.length; i++) {
-                        sanitized[i] = sanitize(values[i], mode);
-                    }
-                    result.put(name, sanitized);
-                }
-            }
-            return Collections.unmodifiableMap(result);
         }
 
         private boolean isParamExcluded(String name) {
