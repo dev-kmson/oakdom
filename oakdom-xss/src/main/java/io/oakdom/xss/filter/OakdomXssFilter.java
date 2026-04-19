@@ -50,7 +50,7 @@ import java.util.Map;
  * <p>For JSON body filtering, only URL-pattern rules and the global filter mode apply.
  * Parameter-specific rules ({@code filterRuleForParam}) are not applicable to body content.
  *
- * <h3>Usage — legacy Spring MVC</h3>
+ * <h2>Usage — legacy Spring MVC</h2>
  * <p>Extend this class and override {@link #configure()} to provide a custom
  * {@link XssConfig}. Register the subclass as a servlet filter in {@code web.xml}:
  * <pre>{@code
@@ -76,7 +76,7 @@ import java.util.Map;
  * </filter-mapping>
  * }</pre>
  *
- * <h3>Filter mode priority</h3>
+ * <h2>Filter mode priority</h2>
  * <ol>
  *   <li>Rule matching both URL pattern and parameter name (most specific)</li>
  *   <li>Rule matching parameter name only</li>

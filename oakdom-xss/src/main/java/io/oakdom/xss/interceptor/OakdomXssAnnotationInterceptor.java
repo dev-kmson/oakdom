@@ -23,7 +23,7 @@ import javax.servlet.http.HttpServletResponse;
  * satisfied as long as the interceptor is registered in the Spring MVC
  * interceptor chain.
  *
- * <h3>Annotation priority (highest to lowest)</h3>
+ * <h2>Annotation priority (highest to lowest)</h2>
  * <ol>
  *   <li>Parameter-level annotation on {@code @RequestParam} or {@code @RequestBody}</li>
  *   <li>Method-level annotation</li>
@@ -31,7 +31,7 @@ import javax.servlet.http.HttpServletResponse;
  *   <li>Global filter mode</li>
  * </ol>
  *
- * <h3>Usage — legacy Spring MVC</h3>
+ * <h2>Usage — legacy Spring MVC</h2>
  * <p>Register this interceptor in your Spring MVC configuration:
  * <pre>{@code
  * &#64;Configuration

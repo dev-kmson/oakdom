@@ -54,7 +54,7 @@ import java.util.Map;
  * For {@code javax.servlet} environments (Tomcat 9 or below), use
  * {@code oakdom-xss} instead.
  *
- * <h3>Usage — legacy Spring MVC (jakarta.servlet)</h3>
+ * <h2>Usage — legacy Spring MVC (jakarta.servlet)</h2>
  * <p>Extend this class and override {@link #configure()} to provide a custom
  * {@link XssConfig}. Register the subclass as a servlet filter in {@code web.xml}:
  * <pre>{@code
@@ -80,7 +80,7 @@ import java.util.Map;
  * </filter-mapping>
  * }</pre>
  *
- * <h3>Filter mode priority</h3>
+ * <h2>Filter mode priority</h2>
  * <ol>
  *   <li>Rule matching both URL pattern and parameter name (most specific)</li>
  *   <li>Rule matching parameter name only</li>

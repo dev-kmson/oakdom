@@ -13,7 +13,7 @@ import java.util.regex.Pattern;
  * XSS filter rule that permits a predefined set of safe HTML tags and per-tag safe
  * attributes, while escaping everything else.
  *
- * <h3>Default allowed tags</h3>
+ * <h2>Default allowed tags</h2>
  * <p>Inline: {@code b}, {@code i}, {@code em}, {@code strong}, {@code u}, {@code s},
  * {@code strike}, {@code small}, {@code sub}, {@code sup}, {@code cite}, {@code q},
  * {@code code}, {@code span}, {@code mark}, {@code abbr}, {@code del}, {@code ins},
@@ -34,7 +34,7 @@ import java.util.regex.Pattern;
  *
  * <p>Other: {@code br}, {@code hr}.
  *
- * <h3>Global attributes</h3>
+ * <h2>Global attributes</h2>
  * <p>The following attributes are permitted on every allowed tag:
  * {@code class}, {@code id}, {@code title}, {@code lang}, {@code dir}, {@code style}.
  * The {@code style} attribute is sanitized — only properties from the configured
@@ -46,7 +46,7 @@ import java.util.regex.Pattern;
  * URL checks. {@code url()} values inside any CSS property are validated against
  * the same URL allowlist used for {@code href} and {@code src}.
  *
- * <h3>Per-tag attributes</h3>
+ * <h2>Per-tag attributes</h2>
  * <ul>
  *   <li>{@code <a>} — {@code href}, {@code target}, {@code rel}, {@code title},
  *       {@code hreflang}, {@code type}, {@code referrerpolicy}.
@@ -88,7 +88,7 @@ import java.util.regex.Pattern;
  *   <li>{@code <col>}, {@code <colgroup>} — {@code span}, {@code width}.</li>
  * </ul>
  *
- * <h3>Intentionally excluded</h3>
+ * <h2>Intentionally excluded</h2>
  * <p>The following are excluded for security reasons and will not be added to the
  * defaults:
  * <ul>
@@ -98,7 +98,7 @@ import java.util.regex.Pattern;
  *   <li>{@code <a download>} — drive-by file download (phishing).</li>
  * </ul>
  *
- * <h3>Customization</h3>
+ * <h2>Customization</h2>
  * <p>Use {@link #WhitelistXssFilterRule(Set, Set, Set, Set)} to add or remove allowed
  * tags and CSS properties from the defaults. Disallowed tags and non-tag content are
  * always escaped using the full 7-character set

@@ -25,7 +25,7 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  * <p>This variant targets {@code jakarta.servlet} environments (Tomcat 10+).
  *
- * <h3>Annotation priority (highest to lowest)</h3>
+ * <h2>Annotation priority (highest to lowest)</h2>
  * <ol>
  *   <li>Parameter-level annotation on {@code @RequestParam} or {@code @RequestBody}</li>
  *   <li>Method-level annotation</li>
@@ -33,7 +33,7 @@ import jakarta.servlet.http.HttpServletResponse;
  *   <li>Global filter mode</li>
  * </ol>
  *
- * <h3>Usage</h3>
+ * <h2>Usage</h2>
  * <p>Register this interceptor in your Spring MVC configuration:
  * <pre>{@code
  * &#64;Configuration

@@ -9,7 +9,7 @@ import java.util.Set;
 /**
  * XSS filter rule that escapes HTML-significant characters.
  *
- * <h3>Default escape set</h3>
+ * <h2>Default escape set</h2>
  * <p>The five core characters are always escaped by default:
  * <ul>
  *   <li>{@code &} &rarr; {@code &amp;} (escaped first to prevent double-escaping)</li>
@@ -19,7 +19,7 @@ import java.util.Set;
  *   <li>{@code '} &rarr; {@code &#x27;}</li>
  * </ul>
  *
- * <h3>Customization</h3>
+ * <h2>Customization</h2>
  * <p>Use {@link #BlacklistXssFilterRule(Set, Set)} to add or remove characters from the
  * escape set. Characters added beyond the defaults use pre-defined named entities when
  * available ({@code /} → {@code &#x2F;}, {@code `} → {@code &#x60;}), and numeric

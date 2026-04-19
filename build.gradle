@@ -1,3 +1,7 @@
+plugins {
+    id 'io.github.gradle-nexus.publish-plugin' version '2.0.0'
+}
+
 ext {
     groupId               = 'io.oakdom'
     projectVersion        = '1.0.0-SNAPSHOT'
@@ -13,9 +17,20 @@ ext {
     assertjVersion        = '3.25.3'
 }
 
+nexusPublishing {
+    repositories {
+        sonatype {
+            nexusUrl = uri('https://central.sonatype.com/api/v1/publisher')
+            username = System.getenv('OSSRH_USERNAME') ?: ''
+            password = System.getenv('OSSRH_PASSWORD') ?: ''
+        }
+    }
+}
+
 subprojects {
     apply plugin: 'java-library'
     apply plugin: 'maven-publish'
+    apply plugin: 'signing'
 
     group   = rootProject.ext.groupId
     version = rootProject.ext.projectVersion
@@ -42,17 +57,39 @@ subprojects {
         useJUnitPlatform()
     }
 
+    signing {
+        def signingKey = System.getenv('GPG_PRIVATE_KEY')
+        def signingPassword = System.getenv('GPG_PASSPHRASE')
+        if (signingKey) {
+            useInMemoryPgpKeys(signingKey, signingPassword)
+            sign publishing.publications
+        }
+    }
+
     publishing {
         publications {
             mavenJava(MavenPublication) {
                 from components.java
                 pom {
-                    url = 'https://github.com/minihandz/oakdom'
+                    name = project.name
+                    description = project.description
+                    url = 'https://github.com/dev-kmson/oakdom'
                     licenses {
                         license {
                             name = 'Apache License, Version 2.0'
                             url  = 'https://www.apache.org/licenses/LICENSE-2.0'
                         }
+                    }
+                    developers {
+                        developer {
+                            id   = 'dev-kmson'
+                            name = 'devson'
+                        }
+                    }
+                    scm {
+                        connection          = 'scm:git:git://github.com/dev-kmson/oakdom.git'
+                        developerConnection = 'scm:git:ssh://github.com/dev-kmson/oakdom.git'
+                        url                 = 'https://github.com/dev-kmson/oakdom'
                     }
                 }
             }
