@@ -1,5 +1,6 @@
 package io.oakdom.xss.processor;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.oakdom.core.filter.FilterMode;
 import io.oakdom.xss.annotation.OakdomXssExclude;
@@ -58,6 +59,45 @@ class OakdomXssJsonRequestProcessorDtoTest {
         String withoutDto = processor.process(json, FilterMode.BLACKLIST, null);
         assertEquals(withoutDto, withDto,
                 "null dtoClass must produce same result as no-dto processing for non-annotated field");
+    }
+
+    // =========================================================================
+    // @JsonAlias name mapping
+    // =========================================================================
+
+    static class JsonAliasDto {
+        @JsonAlias({"raw_content", "content_raw"})
+        @OakdomXssExclude
+        public String rawContent;
+
+        @JsonAlias("html_body")
+        @OakdomXssFilterMode(FilterMode.WHITELIST)
+        public String htmlBody;
+    }
+
+    @Test
+    void jsonAlias_excludedField_resolvedByAlias() throws Exception {
+        // JSON key is an alias — excluded field must still pass through
+        String json = "{\"raw_content\":\"" + XSS + "\"}";
+        String result = processor.process(json, FilterMode.BLACKLIST, JsonAliasDto.class);
+        assertTrue(result.contains(XSS), "@JsonAlias-mapped excluded field must not be sanitized");
+    }
+
+    @Test
+    void jsonAlias_excludedField_resolvedBySecondAlias() throws Exception {
+        // Second alias in the array must also resolve correctly
+        String json = "{\"content_raw\":\"" + XSS + "\"}";
+        String result = processor.process(json, FilterMode.BLACKLIST, JsonAliasDto.class);
+        assertTrue(result.contains(XSS), "second @JsonAlias value must also resolve the excluded field");
+    }
+
+    @Test
+    void jsonAlias_filterModeField_resolvedByAlias() throws Exception {
+        // JSON key is an alias — field-level WHITELIST must apply (preserves <b>, base is BLACKLIST)
+        String json = "{\"html_body\":\"<b>bold</b>\"}";
+        String result = processor.process(json, FilterMode.BLACKLIST, JsonAliasDto.class);
+        assertTrue(result.contains("<b>bold</b>"),
+                "@JsonAlias-mapped WHITELIST field must preserve allowed tag <b>");
     }
 
     // =========================================================================

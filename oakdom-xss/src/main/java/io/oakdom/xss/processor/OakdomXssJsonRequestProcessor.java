@@ -1,5 +1,6 @@
 package io.oakdom.xss.processor;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -276,6 +277,9 @@ public class OakdomXssJsonRequestProcessor implements OakdomRequestProcessor {
      * <p>Only fields that carry XSS annotations or whose type warrants recursive
      * processing are included; plain primitive and String fields without annotations
      * are omitted to keep the map lean.
+     *
+     * <p>{@link JsonAlias} values are registered under the same {@link FieldInfo}
+     * as the primary name so that aliased JSON keys are resolved correctly.
      */
     private static Map<String, FieldInfo> buildFieldMap(Class<?> clazz) {
         Map<String, FieldInfo> map = new LinkedHashMap<>();
@@ -296,12 +300,21 @@ public class OakdomXssJsonRequestProcessor implements OakdomRequestProcessor {
                 boolean hasProcessableElement = elementClass != null && isProcessableType(elementClass);
 
                 if (hasAnnotation || hasNestedType || hasProcessableElement) {
-                    map.put(jsonName, new FieldInfo(
+                    FieldInfo info = new FieldInfo(
                             exclude != null,
                             modeAnnotation != null ? modeAnnotation.value() : null,
                             fieldType,
                             elementClass
-                    ));
+                    );
+                    map.put(jsonName, info);
+                    JsonAlias jsonAlias = field.getAnnotation(JsonAlias.class);
+                    if (jsonAlias != null) {
+                        for (String alias : jsonAlias.value()) {
+                            if (!map.containsKey(alias)) {
+                                map.put(alias, info);
+                            }
+                        }
+                    }
                 }
             }
             current = current.getSuperclass();
