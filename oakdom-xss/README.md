@@ -217,7 +217,7 @@ public class WebConfig implements WebMvcConfigurer {
 
 #### `@OakdomXssExclude`
 
-Skips XSS filtering entirely. Applicable at method or parameter level.
+Skips XSS filtering entirely. Applicable at method level, parameter level, or DTO field level.
 
 ```java
 // Skip XSS filtering for all parameters and the request body on this handler method
@@ -238,7 +238,7 @@ public void handleBodyRaw(@OakdomXssExclude @RequestBody MyDto dto) { ... }
 
 #### `@OakdomXssFilterMode`
 
-Overrides the filter mode for the handler method, a specific parameter, or the request body.
+Overrides the filter mode for the handler method, a specific parameter, the request body, or an individual DTO field.
 
 ```java
 // Apply WHITELIST mode to all parameters and the request body on this handler method
