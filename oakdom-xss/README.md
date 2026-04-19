@@ -13,6 +13,8 @@ Wraps every incoming HTTP request with a sanitizing wrapper that transparently c
 - `javax.servlet` API (Tomcat 9 or below, Jetty 10 or below)
 - Compatible with any version of Spring MVC
 
+> `jackson-databind` is included as a dependency and pulled in automatically. No separate Jackson declaration is required.
+
 > **Note:** This module targets `javax.servlet` only. Environments using `jakarta.servlet`
 > (Tomcat 10.1+) are not supported by this module.
 > Jakarta support is provided separately via `oakdom-xss-jakarta`.

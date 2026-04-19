@@ -17,6 +17,8 @@ Wraps every incoming HTTP request with a sanitizing wrapper that transparently c
 > (Tomcat 9 or below) are not supported by this module.
 > javax.servlet support is provided separately via `oakdom-xss`.
 
+> `jackson-databind` is included as a dependency and pulled in automatically. No separate Jackson declaration is required.
+
 ## Installation
 
 **Maven**

@@ -4,7 +4,6 @@ dependencies {
     api project(':oakdom-xss')
 
     compileOnly "javax.servlet:javax.servlet-api:${rootProject.ext.servletApiVersion}"
-    compileOnly "com.fasterxml.jackson.core:jackson-databind:${rootProject.ext.jacksonVersion}"
     compileOnly "org.springframework:spring-webmvc:${rootProject.ext.springVersion}"
 
     implementation "org.springframework.boot:spring-boot-autoconfigure:${rootProject.ext.springBootVersion}"
@@ -15,5 +14,4 @@ dependencies {
     testImplementation "org.springframework:spring-test:${rootProject.ext.springVersion}"
     testCompileOnly "javax.servlet:javax.servlet-api:${rootProject.ext.servletApiVersion}"
     testRuntimeOnly "javax.servlet:javax.servlet-api:${rootProject.ext.servletApiVersion}"
-    testRuntimeOnly "com.fasterxml.jackson.core:jackson-databind:${rootProject.ext.jacksonVersion}"
 }
