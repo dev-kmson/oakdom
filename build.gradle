@@ -20,7 +20,7 @@ ext {
 nexusPublishing {
     repositories {
         sonatype {
-            nexusUrl = uri('https://central.sonatype.com/api/v1/publisher')
+            nexusUrl = uri('https://central.sonatype.com/api/v1/publisher/')
             username = System.getenv('OSSRH_USERNAME') ?: ''
             password = System.getenv('OSSRH_PASSWORD') ?: ''
         }
