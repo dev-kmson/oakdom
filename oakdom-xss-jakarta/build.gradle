@@ -2,7 +2,7 @@ description = 'oakdom-xss-jakarta: XSS sanitization for legacy Spring MVC / serv
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(11)
+        languageVersion = JavaLanguageVersion.of(17)
     }
 }
 
@@ -11,6 +11,7 @@ dependencies {
 
     compileOnly "jakarta.servlet:jakarta.servlet-api:${rootProject.ext.jakartaServletVersion}"
     compileOnly "com.fasterxml.jackson.core:jackson-databind:${rootProject.ext.jacksonVersion}"
+    compileOnly "org.springframework:spring-webmvc:${rootProject.ext.spring6Version}"
 
     testCompileOnly "jakarta.servlet:jakarta.servlet-api:${rootProject.ext.jakartaServletVersion}"
     testRuntimeOnly "jakarta.servlet:jakarta.servlet-api:${rootProject.ext.jakartaServletVersion}"

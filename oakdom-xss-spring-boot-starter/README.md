@@ -240,6 +240,66 @@ oakdom.xss.exclude-urls=/api/raw/**
 
 ---
 
+## Annotation-Based Control
+
+Per-handler-method XSS control is available via annotations. Annotations take priority over configuration-based rules and are registered automatically — no additional setup required.
+
+### Annotations
+
+#### `@OakdomXssExclude`
+
+Skips XSS filtering entirely. Applicable at method or parameter level.
+
+```java
+// Skip XSS filtering for all parameters and the request body on this handler method
+@OakdomXssExclude
+@PostMapping("/api/raw")
+public void handleRaw(@RequestParam String data) { ... }
+
+// Skip XSS filtering only for the 'rawContent' parameter
+@PostMapping("/api/upload")
+public void handleUpload(
+        @RequestParam String title,
+        @OakdomXssExclude @RequestParam String rawContent) { ... }
+
+// Skip XSS filtering for the entire request body
+@PostMapping("/api/body-raw")
+public void handleBodyRaw(@OakdomXssExclude @RequestBody MyDto dto) { ... }
+```
+
+#### `@OakdomXssFilterMode`
+
+Overrides the filter mode for the handler method, a specific parameter, or the request body.
+
+```java
+// Apply WHITELIST mode to all parameters and the request body on this handler method
+@OakdomXssFilterMode(FilterMode.WHITELIST)
+@PostMapping("/api/editor")
+public void handleEditor(@RequestParam String content) { ... }
+
+// Apply WHITELIST mode only to the 'content' parameter
+@PostMapping("/api/post")
+public void handlePost(
+        @RequestParam String title,
+        @OakdomXssFilterMode(FilterMode.WHITELIST) @RequestParam String content) { ... }
+
+// Apply WHITELIST mode to the entire request body
+@PostMapping("/api/body-editor")
+public void handleBodyEditor(
+        @OakdomXssFilterMode(FilterMode.WHITELIST) @RequestBody MyDto dto) { ... }
+```
+
+### Annotation Priority
+
+| Priority | Source |
+|----------|--------|
+| 1 (highest) | Parameter-level annotation (`@RequestParam` or `@RequestBody`) |
+| 2 | Method-level annotation |
+| 3 | Configuration-based rules (`XssConfig`) |
+| 4 (lowest) | Global filter mode |
+
+---
+
 ## Rule Priority
 
 When multiple rules could apply, the most specific rule wins:

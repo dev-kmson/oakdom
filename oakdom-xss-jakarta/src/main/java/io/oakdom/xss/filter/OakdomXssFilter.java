@@ -5,6 +5,7 @@ import io.oakdom.core.matcher.UrlPatternMatcher;
 import io.oakdom.core.resolver.ContentTypeResolver;
 import io.oakdom.web.filter.OakdomFilter;
 import io.oakdom.xss.config.XssConfig;
+import io.oakdom.xss.interceptor.OakdomXssRequestAttributes;
 import io.oakdom.xss.processor.OakdomXssJsonRequestProcessor;
 import io.oakdom.xss.sanitizer.DefaultXssSanitizer;
 
@@ -316,26 +317,26 @@ public class OakdomXssFilter implements OakdomFilter, Filter {
 
         @Override
         public String getParameter(String name) {
-            if (shouldSkip(requestUri, name)) {
+            if (isParamExcluded(name)) {
                 return super.getParameter(name);
             }
             String value = super.getParameter(name);
             if (value == null) {
                 return null;
             }
-            return sanitize(value, resolveFilterMode(requestUri, name));
+            return sanitize(value, resolveParamFilterMode(name));
         }
 
         @Override
         public String[] getParameterValues(String name) {
-            if (shouldSkip(requestUri, name)) {
+            if (isParamExcluded(name)) {
                 return super.getParameterValues(name);
             }
             String[] values = super.getParameterValues(name);
             if (values == null) {
                 return null;
             }
-            FilterMode mode = resolveFilterMode(requestUri, name);
+            FilterMode mode = resolveParamFilterMode(name);
             String[] sanitized = new String[values.length];
             for (int i = 0; i < values.length; i++) {
                 sanitized[i] = sanitize(values[i], mode);
@@ -349,10 +350,10 @@ public class OakdomXssFilter implements OakdomFilter, Filter {
             Map<String, String[]> result = new LinkedHashMap<>();
             for (Map.Entry<String, String[]> entry : original.entrySet()) {
                 String name = entry.getKey();
-                if (shouldSkip(requestUri, name)) {
+                if (isParamExcluded(name)) {
                     result.put(name, entry.getValue());
                 } else {
-                    FilterMode mode = resolveFilterMode(requestUri, name);
+                    FilterMode mode = resolveParamFilterMode(name);
                     String[] values = entry.getValue();
                     String[] sanitized = new String[values.length];
                     for (int i = 0; i < values.length; i++) {
@@ -362,6 +363,28 @@ public class OakdomXssFilter implements OakdomFilter, Filter {
                 }
             }
             return Collections.unmodifiableMap(result);
+        }
+
+        private boolean isParamExcluded(String name) {
+            if (Boolean.TRUE.equals(getAttribute(OakdomXssRequestAttributes.EXCLUDE_ALL))) {
+                return true;
+            }
+            if (Boolean.TRUE.equals(getAttribute(OakdomXssRequestAttributes.PARAM_EXCLUDE_PREFIX + name))) {
+                return true;
+            }
+            return shouldSkip(requestUri, name);
+        }
+
+        private FilterMode resolveParamFilterMode(String name) {
+            Object paramMode = getAttribute(OakdomXssRequestAttributes.PARAM_MODE_PREFIX + name);
+            if (paramMode instanceof FilterMode) {
+                return (FilterMode) paramMode;
+            }
+            Object methodMode = getAttribute(OakdomXssRequestAttributes.METHOD_MODE);
+            if (methodMode instanceof FilterMode) {
+                return (FilterMode) methodMode;
+            }
+            return resolveFilterMode(requestUri, name);
         }
 
         /**
@@ -421,6 +444,12 @@ public class OakdomXssFilter implements OakdomFilter, Filter {
         }
 
         private boolean shouldSkipBody() {
+            if (Boolean.TRUE.equals(getAttribute(OakdomXssRequestAttributes.EXCLUDE_ALL))) {
+                return true;
+            }
+            if (Boolean.TRUE.equals(getAttribute(OakdomXssRequestAttributes.BODY_EXCLUDE))) {
+                return true;
+            }
             for (XssConfig.ExcludeRule rule : config.getExcludeRules()) {
                 if (rule.getUrlPattern() != null && rule.getParameterName() == null) {
                     if (matchesUrl(rule.getUrlPattern(), requestUri)) {
@@ -432,6 +461,14 @@ public class OakdomXssFilter implements OakdomFilter, Filter {
         }
 
         private FilterMode resolveFilterModeForBody() {
+            Object bodyMode = getAttribute(OakdomXssRequestAttributes.BODY_MODE);
+            if (bodyMode instanceof FilterMode) {
+                return (FilterMode) bodyMode;
+            }
+            Object methodMode = getAttribute(OakdomXssRequestAttributes.METHOD_MODE);
+            if (methodMode instanceof FilterMode) {
+                return (FilterMode) methodMode;
+            }
             for (XssConfig.FilterRule rule : config.getFilterRules()) {
                 if (rule.getUrlPattern() != null && rule.getParameterName() == null) {
                     if (matchesUrl(rule.getUrlPattern(), requestUri)) {

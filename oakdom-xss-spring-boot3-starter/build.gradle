@@ -11,6 +11,7 @@ dependencies {
 
     compileOnly "jakarta.servlet:jakarta.servlet-api:${rootProject.ext.jakartaServletVersion}"
     compileOnly "com.fasterxml.jackson.core:jackson-databind:${rootProject.ext.jacksonVersion}"
+    compileOnly "org.springframework:spring-webmvc:${rootProject.ext.spring6Version}"
 
     implementation "org.springframework.boot:spring-boot-autoconfigure:${rootProject.ext.springBoot3Version}"
 

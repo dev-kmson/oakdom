@@ -5,6 +5,7 @@ dependencies {
 
     compileOnly "javax.servlet:javax.servlet-api:${rootProject.ext.servletApiVersion}"
     compileOnly "com.fasterxml.jackson.core:jackson-databind:${rootProject.ext.jacksonVersion}"
+    compileOnly "org.springframework:spring-webmvc:${rootProject.ext.springVersion}"
 
     implementation "org.springframework.boot:spring-boot-autoconfigure:${rootProject.ext.springBootVersion}"
 

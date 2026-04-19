@@ -126,4 +126,19 @@ public class XssAutoConfiguration {
         registration.setName("oakdomXssFilter");
         return registration;
     }
+
+    /**
+     * Registers {@link OakdomXssMvcConfigurer} to add the annotation interceptor to
+     * the Spring MVC interceptor chain.
+     *
+     * <p>If the application context already contains an {@link OakdomXssMvcConfigurer}
+     * bean, this method is skipped.
+     *
+     * @return the MVC configurer that registers the annotation interceptor
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public OakdomXssMvcConfigurer oakdomXssMvcConfigurer() {
+        return new OakdomXssMvcConfigurer();
+    }
 }

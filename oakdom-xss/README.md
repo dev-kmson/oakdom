@@ -11,7 +11,7 @@ Wraps every incoming HTTP request with a sanitizing wrapper that transparently c
 
 - JDK 1.8+
 - `javax.servlet` API (Tomcat 9 or below, Jetty 10 or below)
-- Compatible with any version of Spring MVC (no Spring dependency required at runtime)
+- Compatible with any version of Spring MVC
 
 > **Note:** This module targets `javax.servlet` only. Environments using `jakarta.servlet`
 > (Tomcat 10.1+) are not supported by this module.
@@ -190,6 +190,80 @@ XssConfig.builder()
     .excludeUrl("/api/raw/**")
     .build();
 ```
+
+---
+
+## Annotation-Based Control
+
+For Spring MVC applications, per-handler-method XSS control is available via annotations. Annotations take priority over configuration-based rules.
+
+### Setup
+
+Register `OakdomXssAnnotationInterceptor` in your Spring MVC configuration:
+
+```java
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(new OakdomXssAnnotationInterceptor());
+    }
+}
+```
+
+### Annotations
+
+#### `@OakdomXssExclude`
+
+Skips XSS filtering entirely. Applicable at method or parameter level.
+
+```java
+// Skip XSS filtering for all parameters and the request body on this handler method
+@OakdomXssExclude
+@PostMapping("/api/raw")
+public void handleRaw(@RequestParam String data) { ... }
+
+// Skip XSS filtering only for the 'rawContent' parameter
+@PostMapping("/api/upload")
+public void handleUpload(
+        @RequestParam String title,
+        @OakdomXssExclude @RequestParam String rawContent) { ... }
+
+// Skip XSS filtering for the entire request body
+@PostMapping("/api/body-raw")
+public void handleBodyRaw(@OakdomXssExclude @RequestBody MyDto dto) { ... }
+```
+
+#### `@OakdomXssFilterMode`
+
+Overrides the filter mode for the handler method, a specific parameter, or the request body.
+
+```java
+// Apply WHITELIST mode to all parameters and the request body on this handler method
+@OakdomXssFilterMode(FilterMode.WHITELIST)
+@PostMapping("/api/editor")
+public void handleEditor(@RequestParam String content) { ... }
+
+// Apply WHITELIST mode only to the 'content' parameter
+@PostMapping("/api/post")
+public void handlePost(
+        @RequestParam String title,
+        @OakdomXssFilterMode(FilterMode.WHITELIST) @RequestParam String content) { ... }
+
+// Apply WHITELIST mode to the entire request body
+@PostMapping("/api/body-editor")
+public void handleBodyEditor(
+        @OakdomXssFilterMode(FilterMode.WHITELIST) @RequestBody MyDto dto) { ... }
+```
+
+### Annotation Priority
+
+| Priority | Source |
+|----------|--------|
+| 1 (highest) | Parameter-level annotation (`@RequestParam` or `@RequestBody`) |
+| 2 | Method-level annotation |
+| 3 | Configuration-based rules (`XssConfig`) |
+| 4 (lowest) | Global filter mode |
 
 ---
 
