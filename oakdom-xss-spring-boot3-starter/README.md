@@ -2,7 +2,10 @@
 
 XSS auto-configuration for Spring Boot 3.x applications.
 
-Registers `OakdomXssFilter` automatically — no `web.xml`, no manual filter bean required. Add the dependency and all request parameters are sanitized out of the box.
+Registers `OakdomXssFilter` automatically — no `web.xml`, no manual filter bean required. Add the dependency and all incoming request data is sanitized out of the box.
+
+- **Request parameters** (`application/x-www-form-urlencoded`, `multipart/form-data`, query string) — sanitized on access.
+- **JSON request bodies** (`application/json`) — all string values within the JSON structure are sanitized before the body is read by application code.
 
 ## Requirements
 
@@ -201,6 +204,39 @@ The following CSS properties are not included in the default whitelist for secur
 | `pointer-events` | Clickjacking via disabling UI elements |
 
 These can be explicitly added via `oakdom.xss.add-allowed-css-properties` if your application requires them and you accept the risk.
+
+---
+
+## JSON Request Body
+
+For `application/json` requests, all string values within the JSON body are sanitized before application code reads the body. Non-string values (numbers, booleans, nulls) are preserved as-is. Nested objects and arrays are traversed recursively.
+
+```
+Input:  {"title": "<script>alert(1)</script>", "count": 42}
+Output: {"title": "&lt;script&gt;alert(1)&lt;/script&gt;", "count": 42}
+```
+
+**Rule applicability for JSON body:**
+
+| Rule type | Applies to JSON body |
+|-----------|---------------------|
+| `oakdom.xss.global-filter-mode` | ✅ |
+| `oakdom.xss.filter-rules[n].url-pattern` (URL only) | ✅ |
+| `oakdom.xss.filter-rules[n].param` | ❌ — param rules apply to query string / form data only |
+| `oakdom.xss.filter-rules[n].url-pattern` + `param` | ❌ — param rules apply to query string / form data only |
+
+To apply WHITELIST mode to a JSON body endpoint:
+
+```properties
+oakdom.xss.filter-rules[0].url-pattern=/api/editor/**
+oakdom.xss.filter-rules[0].mode=WHITELIST
+```
+
+To skip JSON body sanitization for specific URLs:
+
+```properties
+oakdom.xss.exclude-urls=/api/raw/**
+```
 
 ---
 

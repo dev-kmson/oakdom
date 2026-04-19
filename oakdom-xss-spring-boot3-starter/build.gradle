@@ -20,4 +20,5 @@ dependencies {
     testImplementation "org.springframework:spring-test:${rootProject.ext.spring6Version}"
     testCompileOnly "jakarta.servlet:jakarta.servlet-api:${rootProject.ext.jakartaServletVersion}"
     testRuntimeOnly "jakarta.servlet:jakarta.servlet-api:${rootProject.ext.jakartaServletVersion}"
+    testRuntimeOnly "com.fasterxml.jackson.core:jackson-databind:${rootProject.ext.jacksonVersion}"
 }

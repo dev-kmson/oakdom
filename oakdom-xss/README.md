@@ -2,7 +2,10 @@
 
 XSS sanitization filter for legacy Spring MVC and servlet environments using the `javax.servlet` API.
 
-Wraps every incoming HTTP request with a sanitizing wrapper that transparently cleans parameter values before they reach your application code — no changes to your controllers required.
+Wraps every incoming HTTP request with a sanitizing wrapper that transparently cleans request data before it reaches your application code — no changes to your controllers required.
+
+- **Request parameters** (`application/x-www-form-urlencoded`, `multipart/form-data`, query string) — sanitized on access via `getParameter()`.
+- **JSON request bodies** (`application/json`) — all string values within the JSON structure are sanitized before the body is read by application code.
 
 ## Requirements
 
@@ -157,6 +160,34 @@ XssConfig.builder()
     // Skip filtering for the given parameter only on the given URL
     .excludeRule("/api/editor/**", "signature")
 
+    .build();
+```
+
+---
+
+## JSON Request Body
+
+For `application/json` requests, all string values within the JSON body are sanitized before application code reads the body. Non-string values (numbers, booleans, nulls) are preserved as-is. Nested objects and arrays are traversed recursively.
+
+```
+Input:  {"title": "<script>alert(1)</script>", "count": 42}
+Output: {"title": "&lt;script&gt;alert(1)&lt;/script&gt;", "count": 42}
+```
+
+**Rule applicability for JSON body:**
+
+| Rule type | Applies to JSON body |
+|-----------|---------------------|
+| Global filter mode | ✅ |
+| URL pattern rule (`filterRuleForUrl`) | ✅ |
+| Parameter rule (`filterRuleForParam`) | ❌ — param rules apply to query string / form data only |
+| URL + parameter rule (`filterRule`) | ❌ — param rules apply to query string / form data only |
+
+To skip JSON body sanitization for specific URLs, use `excludeUrl`:
+
+```java
+XssConfig.builder()
+    .excludeUrl("/api/raw/**")
     .build();
 ```
 

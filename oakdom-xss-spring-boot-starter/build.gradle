@@ -14,4 +14,5 @@ dependencies {
     testImplementation "org.springframework:spring-test:${rootProject.ext.springVersion}"
     testCompileOnly "javax.servlet:javax.servlet-api:${rootProject.ext.servletApiVersion}"
     testRuntimeOnly "javax.servlet:javax.servlet-api:${rootProject.ext.servletApiVersion}"
+    testRuntimeOnly "com.fasterxml.jackson.core:jackson-databind:${rootProject.ext.jacksonVersion}"
 }

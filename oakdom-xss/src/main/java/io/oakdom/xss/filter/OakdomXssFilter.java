@@ -2,30 +2,52 @@ package io.oakdom.xss.filter;
 
 import io.oakdom.core.filter.FilterMode;
 import io.oakdom.core.matcher.UrlPatternMatcher;
+import io.oakdom.core.resolver.ContentTypeResolver;
 import io.oakdom.web.filter.OakdomFilter;
 import io.oakdom.xss.config.XssConfig;
+import io.oakdom.xss.processor.OakdomXssJsonRequestProcessor;
 import io.oakdom.xss.sanitizer.DefaultXssSanitizer;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
+import javax.servlet.ReadListener;
 import javax.servlet.ServletException;
+import javax.servlet.ServletInputStream;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * XSS servlet filter that sanitizes all incoming HTTP request parameters.
+ * XSS servlet filter that sanitizes all incoming HTTP request parameters
+ * and JSON request bodies.
  *
  * <p>Implements both {@link OakdomFilter} (for filter-mode resolution and exclusion logic)
- * and {@link Filter} (for servlet integration). On each request, parameter values are
- * transparently sanitized when accessed via {@code getParameter()},
- * {@code getParameterValues()}, or {@code getParameterMap()}.
+ * and {@link Filter} (for servlet integration). On each request:
+ * <ul>
+ *   <li>Parameter values ({@code application/x-www-form-urlencoded},
+ *       {@code multipart/form-data}, query string) are sanitized lazily when accessed
+ *       via {@code getParameter()}, {@code getParameterValues()}, or
+ *       {@code getParameterMap()}.</li>
+ *   <li>JSON request bodies ({@code application/json}) are sanitized lazily when the
+ *       body is first read via {@code getInputStream()} or {@code getReader()}.
+ *       All string values within the JSON structure are sanitized; non-string values
+ *       (numbers, booleans, nulls) are preserved. The sanitized body is cached so it
+ *       can be read multiple times.</li>
+ * </ul>
+ *
+ * <p>For JSON body filtering, only URL-pattern rules and the global filter mode apply.
+ * Parameter-specific rules ({@code filterRuleForParam}) are not applicable to body content.
  *
  * <h3>Usage — legacy Spring MVC</h3>
  * <p>Extend this class and override {@link #configure()} to provide a custom
@@ -66,6 +88,7 @@ public class OakdomXssFilter implements OakdomFilter, Filter {
     private final XssConfig config;
     private final DefaultXssSanitizer blacklistSanitizer;
     private final DefaultXssSanitizer whitelistSanitizer;
+    private final OakdomXssJsonRequestProcessor jsonProcessor;
 
     /**
      * Creates a filter using the configuration returned by {@link #configure()}.
@@ -75,6 +98,7 @@ public class OakdomXssFilter implements OakdomFilter, Filter {
         this.config = configure();
         this.blacklistSanitizer = DefaultXssSanitizer.of(FilterMode.BLACKLIST, this.config);
         this.whitelistSanitizer = DefaultXssSanitizer.of(FilterMode.WHITELIST, this.config);
+        this.jsonProcessor = new OakdomXssJsonRequestProcessor(blacklistSanitizer, whitelistSanitizer);
     }
 
     /**
@@ -89,6 +113,7 @@ public class OakdomXssFilter implements OakdomFilter, Filter {
         this.config = config;
         this.blacklistSanitizer = DefaultXssSanitizer.of(FilterMode.BLACKLIST, config);
         this.whitelistSanitizer = DefaultXssSanitizer.of(FilterMode.WHITELIST, config);
+        this.jsonProcessor = new OakdomXssJsonRequestProcessor(blacklistSanitizer, whitelistSanitizer);
     }
 
     // -------------------------------------------------------------------------
@@ -111,6 +136,10 @@ public class OakdomXssFilter implements OakdomFilter, Filter {
      * <p>Parameter values are sanitized lazily — only when accessed by downstream
      * code via {@code getParameter()}, {@code getParameterValues()}, or
      * {@code getParameterMap()}.
+     *
+     * <p>JSON request bodies ({@code application/json}) are also sanitized lazily —
+     * only when first read via {@code getInputStream()} or {@code getReader()}.
+     * The sanitized body is cached so it can be read multiple times.
      *
      * @param request  the incoming servlet request
      * @param response the servlet response
@@ -266,15 +295,19 @@ public class OakdomXssFilter implements OakdomFilter, Filter {
     // -------------------------------------------------------------------------
 
     /**
-     * {@link HttpServletRequestWrapper} that sanitizes parameter values on access.
+     * {@link HttpServletRequestWrapper} that sanitizes parameter values and JSON
+     * request bodies on access.
      */
     private class XssHttpRequestWrapper extends HttpServletRequestWrapper {
 
         private final String requestUri;
+        private final boolean isJsonBody;
+        private byte[] cachedBody;
 
         XssHttpRequestWrapper(HttpServletRequest request) {
             super(request);
             this.requestUri = request.getRequestURI();
+            this.isJsonBody = ContentTypeResolver.isJson(request.getContentType());
         }
 
         @Override
@@ -325,6 +358,133 @@ public class OakdomXssFilter implements OakdomFilter, Filter {
                 }
             }
             return Collections.unmodifiableMap(result);
+        }
+
+        /**
+         * Returns the request body as a sanitized {@link ServletInputStream} for
+         * {@code application/json} requests. For other content types, delegates to
+         * the original request.
+         *
+         * <p>The sanitized body is cached after the first read so it can be read
+         * multiple times.
+         */
+        @Override
+        public ServletInputStream getInputStream() throws IOException {
+            if (!isJsonBody) {
+                return super.getInputStream();
+            }
+            return new CachedBodyServletInputStream(getOrReadBody());
+        }
+
+        /**
+         * Returns the request body as a sanitized {@link BufferedReader} for
+         * {@code application/json} requests. For other content types, delegates to
+         * the original request.
+         *
+         * <p>The sanitized body is cached after the first read so it can be read
+         * multiple times.
+         */
+        @Override
+        public BufferedReader getReader() throws IOException {
+            if (!isJsonBody) {
+                return super.getReader();
+            }
+            String encoding = getCharacterEncoding();
+            if (encoding == null) {
+                encoding = "UTF-8";
+            }
+            return new BufferedReader(new InputStreamReader(
+                    new ByteArrayInputStream(getOrReadBody()), encoding));
+        }
+
+        private synchronized byte[] getOrReadBody() throws IOException {
+            if (cachedBody == null) {
+                byte[] rawBytes = readBytes(super.getInputStream());
+                if (shouldSkipBody()) {
+                    cachedBody = rawBytes;
+                } else {
+                    String encoding = getCharacterEncoding();
+                    if (encoding == null) {
+                        encoding = "UTF-8";
+                    }
+                    String raw = new String(rawBytes, encoding);
+                    FilterMode mode = resolveFilterModeForBody();
+                    String sanitized = jsonProcessor.process(raw, mode);
+                    cachedBody = sanitized.getBytes(encoding);
+                }
+            }
+            return cachedBody;
+        }
+
+        private boolean shouldSkipBody() {
+            for (XssConfig.ExcludeRule rule : config.getExcludeRules()) {
+                if (rule.getUrlPattern() != null && rule.getParameterName() == null) {
+                    if (matchesUrl(rule.getUrlPattern(), requestUri)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        private FilterMode resolveFilterModeForBody() {
+            for (XssConfig.FilterRule rule : config.getFilterRules()) {
+                if (rule.getUrlPattern() != null && rule.getParameterName() == null) {
+                    if (matchesUrl(rule.getUrlPattern(), requestUri)) {
+                        return rule.getFilterMode();
+                    }
+                }
+            }
+            return config.getGlobalFilterMode();
+        }
+
+        private byte[] readBytes(InputStream inputStream) throws IOException {
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+            byte[] chunk = new byte[4096];
+            int n;
+            while ((n = inputStream.read(chunk)) != -1) {
+                buffer.write(chunk, 0, n);
+            }
+            return buffer.toByteArray();
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Inner class: cached body servlet input stream
+    // -------------------------------------------------------------------------
+
+    /**
+     * {@link ServletInputStream} backed by a cached byte array.
+     *
+     * <p>Used to allow the request body to be read multiple times after it has
+     * been consumed and cached by {@link XssHttpRequestWrapper}.
+     */
+    private static class CachedBodyServletInputStream extends ServletInputStream {
+
+        private final ByteArrayInputStream inputStream;
+
+        CachedBodyServletInputStream(byte[] body) {
+            this.inputStream = new ByteArrayInputStream(body);
+        }
+
+        @Override
+        public int read() {
+            return inputStream.read();
+        }
+
+        @Override
+        public boolean isFinished() {
+            return inputStream.available() == 0;
+        }
+
+        @Override
+        public boolean isReady() {
+            return true;
+        }
+
+        @Override
+        public void setReadListener(ReadListener readListener) {
+            // synchronous use only; async reading is not supported
         }
     }
 }

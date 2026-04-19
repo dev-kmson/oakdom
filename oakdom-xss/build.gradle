@@ -7,7 +7,10 @@ dependencies {
     compileOnly "jakarta.servlet:jakarta.servlet-api:${rootProject.ext.jakartaServletVersion}"
 compileOnly "com.fasterxml.jackson.core:jackson-databind:${rootProject.ext.jacksonVersion}"
 
+    testImplementation "org.springframework:spring-test:5.0.0.RELEASE"
+    testImplementation "org.springframework:spring-web:5.0.0.RELEASE"
     testCompileOnly "javax.servlet:javax.servlet-api:${rootProject.ext.servletApiVersion}"
     testCompileOnly "com.fasterxml.jackson.core:jackson-databind:${rootProject.ext.jacksonVersion}"
     testRuntimeOnly "javax.servlet:javax.servlet-api:${rootProject.ext.servletApiVersion}"
+    testRuntimeOnly "com.fasterxml.jackson.core:jackson-databind:${rootProject.ext.jacksonVersion}"
 }
