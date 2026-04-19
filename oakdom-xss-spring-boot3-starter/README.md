@@ -289,6 +289,12 @@ public void handleBodyEditor(
         @OakdomXssFilterMode(FilterMode.WHITELIST) @RequestBody MyDto dto) { ... }
 ```
 
+### JSON Body Behavior
+
+- Annotations on `@RequestBody` apply to the **entire JSON body** — field-level control within the JSON structure is not supported.
+- Annotations on `@RequestParam` parameters have **no effect on the JSON body**. Use `@RequestBody`-level or method-level annotations to control JSON body filtering.
+- Method-level annotations apply to **both parameters and the JSON body**.
+
 ### Priority
 
 When multiple sources could apply, the most specific wins:
