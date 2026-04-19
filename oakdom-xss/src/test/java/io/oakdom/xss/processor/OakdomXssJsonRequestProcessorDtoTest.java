@@ -140,10 +140,12 @@ class OakdomXssJsonRequestProcessorDtoTest {
                 + "{\"rawText\":\"" + XSS + "\",\"author\":\"safe\"}"
                 + "]}";
         String result = processor.process(json, FilterMode.BLACKLIST, ArticleDto.class);
-        // rawText in each comment must pass through
-        assertTrue(result.contains(XSS), "excluded field in List<DTO> element must pass through");
-        // author in first comment must be sanitized
-        assertFalse(result.contains("\"author\":\"" + XSS), "non-annotated field in list element must be sanitized");
+        // rawText (excluded) must pass through — raw XSS appears in output
+        assertTrue(result.contains("\"rawText\":\"" + XSS + "\""),
+                "excluded field in List<DTO> element must pass through");
+        // author (non-annotated) must be sanitized — raw XSS must NOT appear for author key
+        assertTrue(result.contains("\"author\":\"" + ESCAPED + "\""),
+                "non-annotated field in list element must be sanitized to escaped form");
     }
 
     // =========================================================================
@@ -210,10 +212,12 @@ class OakdomXssJsonRequestProcessorDtoTest {
 
     @Test
     void fieldAnnotation_overridesBaseModeWhitelist() throws Exception {
-        // Base mode is WHITELIST, but field annotation forces BLACKLIST
-        String json = "{\"alwaysBlacklist\":\"" + XSS + "\"}";
+        // Base mode is WHITELIST → <b> would be preserved; field annotation forces BLACKLIST → <b> must be escaped.
+        // Using <b> to distinguish: WHITELIST preserves allowed tags, BLACKLIST escapes them.
+        String json = "{\"alwaysBlacklist\":\"<b>bold</b>\"}";
         String result = processor.process(json, FilterMode.WHITELIST, PriorityDto.class);
-        assertFalse(result.contains("<script>"), "field-level BLACKLIST must override base WHITELIST mode");
+        assertTrue(result.contains("&lt;b&gt;bold&lt;/b&gt;"),
+                "field-level BLACKLIST must override base WHITELIST mode — <b> must be escaped, not preserved");
     }
 
     // =========================================================================

@@ -289,24 +289,60 @@ public void handleBodyEditor(
         @OakdomXssFilterMode(FilterMode.WHITELIST) @RequestBody MyDto dto) { ... }
 ```
 
+### DTO Field Annotations
+
+For JSON request bodies, you can annotate individual fields of the DTO class to control filtering at the field level. This is the most granular level of control available.
+
+```java
+public class ArticleDto {
+
+    // Raw value passes through — no XSS filtering applied to this field
+    @OakdomXssExclude
+    private String rawContent;
+
+    // WHITELIST mode applied to this field, regardless of the body-level mode
+    @OakdomXssFilterMode(FilterMode.WHITELIST)
+    private String htmlBody;
+
+    // No annotation — uses whatever mode is in effect for the body
+    private String title;
+}
+```
+
+Nested DTOs and collections are supported — annotations on nested DTO fields are applied recursively.
+
 ### JSON Body Behavior
 
-- Annotations on `@RequestBody` apply to the **entire JSON body** — field-level control within the JSON structure is not supported.
-- Annotations on `@RequestParam` parameters have **no effect on the JSON body**. Use `@RequestBody`-level or method-level annotations to control JSON body filtering.
-- Method-level annotations apply to **both parameters and the JSON body**.
+- **DTO field `@OakdomXssExclude`** — that field passes through as-is; all other fields are still filtered.
+- **DTO field `@OakdomXssFilterMode`** — that field uses the specified mode; all other fields use the body-level mode.
+- **`@OakdomXssExclude` on `@RequestBody` or the handler method** — the entire body is skipped as-is. DTO field annotations are not consulted.
+- **`@OakdomXssFilterMode` on `@RequestBody` or the handler method** — sets the default mode for the whole body. DTO field annotations can still override it per field.
+- **`@RequestParam` annotations** have no effect on the JSON body.
 
 ### Priority
 
-When multiple sources could apply, the most specific wins:
+**For request parameters:**
 
 | Priority | Source |
 |----------|--------|
-| 1 (highest) | Parameter-level annotation (`@RequestParam` or `@RequestBody`) |
+| 1 (highest) | Parameter-level annotation (`@RequestParam`) |
 | 2 | Method-level annotation |
 | 3 | Config rule — URL pattern + parameter name |
 | 4 | Config rule — parameter name only |
 | 5 | Config rule — URL pattern only |
 | 6 (lowest) | Global filter mode |
+
+**For JSON request body:**
+
+| Priority | Source |
+|----------|--------|
+| 1 (highest) | DTO field annotation (`@OakdomXssExclude` / `@OakdomXssFilterMode` on the field) |
+| 2 | `@RequestBody` parameter annotation |
+| 3 | Method-level annotation |
+| 4 | Config rule — URL pattern only |
+| 5 (lowest) | Global filter mode |
+
+> When `@OakdomXssExclude` is used at priority 2 or 3, the entire body is passed through as-is and DTO field annotations are not consulted. When `@OakdomXssFilterMode` is used at priority 2 or 3, it sets the default mode for the body and DTO field annotations (priority 1) can still override it per field.
 
 ---
 
