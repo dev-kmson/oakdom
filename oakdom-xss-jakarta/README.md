@@ -52,7 +52,17 @@ Register `OakdomXssFilter` in `web.xml`. That's it — all request parameters ar
 
 > The default behavior escapes `&`, `<`, `>`, `"`, `'` in every parameter value of every request.
 
-> **Using Spring MVC annotations?** If you want to use `@OakdomXssExclude` or `@OakdomXssFilterMode` on your controllers, also register `OakdomXssAnnotationInterceptor` in your Spring MVC configuration. See [Annotation-Based Control](#annotation-based-control) for details.
+If you want to use `@OakdomXssExclude` or `@OakdomXssFilterMode` annotations on your controllers, also register `OakdomXssAnnotationInterceptor`:
+
+```java
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(new OakdomXssAnnotationInterceptor());
+    }
+}
+```
 
 ---
 
